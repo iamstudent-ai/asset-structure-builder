@@ -1,0 +1,153 @@
+import { useState, useMemo } from "react";
+import { Asset, ASSET_FIELDS } from "@/types/asset";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
+} from "@/components/ui/table";
+import { Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+
+const ROWS_PER_PAGE = 10;
+
+interface AssetTableProps {
+  assets: Asset[];
+  onViewAsset?: (asset: Asset) => void;
+}
+
+const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  // Filter by Asset ID, Serial Number, or Assigned User
+  const filtered = useMemo(() => {
+    if (!search.trim()) return assets;
+    const q = search.toLowerCase();
+    return assets.filter(
+      (a) =>
+        a["Asset ID"].toLowerCase().includes(q) ||
+        a["Serial Number"].toLowerCase().includes(q) ||
+        a["Assigned User"].toLowerCase().includes(q)
+    );
+  }, [assets, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const pageData = filtered.slice(
+    (safePage - 1) * ROWS_PER_PAGE,
+    safePage * ROWS_PER_PAGE
+  );
+
+  // Reset to page 1 when search changes
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by Asset ID, Serial Number, or User..."
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <span className="text-sm text-muted-foreground">
+          {filtered.length} asset{filtered.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Table */}
+      <div className="border rounded-md overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              {ASSET_FIELDS.map((field) => (
+                <TableHead
+                  key={field}
+                  className="whitespace-nowrap text-xs font-semibold"
+                >
+                  {field}
+                </TableHead>
+              ))}
+              <TableHead className="text-xs font-semibold w-[70px]">
+                Action
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageData.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={ASSET_FIELDS.length + 1}
+                  className="text-center text-muted-foreground py-8"
+                >
+                  No assets found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              pageData.map((asset) => (
+                <TableRow key={asset["Asset ID"]}>
+                  {ASSET_FIELDS.map((field) => (
+                    <TableCell
+                      key={field}
+                      className="whitespace-nowrap text-xs"
+                    >
+                      {String(asset[field])}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => onViewAsset?.(asset)}
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-1" />
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          Page {safePage} of {totalPages}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={safePage <= 1}
+            onClick={() => setPage(safePage - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={safePage >= totalPages}
+            onClick={() => setPage(safePage + 1)}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AssetTable;
