@@ -67,4 +67,28 @@ export const FIELD_TYPES: Record<keyof Asset, "number" | "text" | "date"> = {
 };
 
 // Only these fields can be edited
-export const EDITABLE_FIELDS: (keyof Asset)[] = ["Serial Number"];
+export const EDITABLE_FIELDS: (keyof Asset)[] = [
+  "Serial Number",
+  "Assigned User",
+  "Location",
+  "Office",
+  "Department",
+  "Lifecycle Status",
+  "Company",
+  "Asset Category",
+  "Brand",
+  "Model",
+];
+
+// Required fields that cannot be empty
+export const REQUIRED_FIELDS: (keyof Asset)[] = [
+  "Asset ID",
+  "Company",
+  "Asset Category",
+  "Brand",
+  "Serial Number",
+  "Assigned User",
+  "Location",
+  "Department",
+  "Lifecycle Status",
+];
