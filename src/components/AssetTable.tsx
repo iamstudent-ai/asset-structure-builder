@@ -1,6 +1,5 @@
-// AssetTable.tsx — Paginated, searchable table for all 18 asset fields.
-// Supports horizontal scroll for small screens. Displays "N/A" for empty values.
-// Renders only visible page rows for performance.
+// AssetTable.tsx — Paginated, searchable table with category badges,
+// striped rows, hover effects, and category filtering support.
 
 import { useState, useMemo } from "react";
 import { Asset, ASSET_FIELDS } from "@/types/asset";
@@ -10,6 +9,7 @@ import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from "@/components/ui/table";
 import { Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import CategoryBadge from "@/components/CategoryBadge";
 
 const ROWS_PER_PAGE = 10;
 
@@ -18,7 +18,7 @@ interface AssetTableProps {
   onViewAsset?: (asset: Asset) => void;
 }
 
-/** Display value — shows "N/A" for empty/null fields, truncates long text */
+/** Display value — shows "N/A" for empty/null fields */
 const displayValue = (val: string | number): string => {
   const s = String(val ?? "").trim();
   return s === "" ? "N/A" : s;
@@ -28,7 +28,6 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  // Filter by Asset ID, Serial Number, or Assigned User
   const filtered = useMemo(() => {
     if (!search.trim()) return assets;
     const q = search.toLowerCase();
@@ -62,7 +61,7 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
             placeholder="Search by Asset ID, Serial Number, or User..."
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-9 shadow-sm"
           />
         </div>
         <span className="text-sm text-muted-foreground">
@@ -70,20 +69,20 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
         </span>
       </div>
 
-      {/* Table with horizontal scroll */}
-      <div className="border rounded-md overflow-x-auto">
+      {/* Table */}
+      <div className="border rounded-lg overflow-x-auto shadow-sm bg-card">
         <Table className="min-w-[1400px]">
           <TableHeader>
-            <TableRow className="bg-muted/50">
+            <TableRow className="bg-muted/60 hover:bg-muted/60">
               {ASSET_FIELDS.map((field) => (
                 <TableHead
                   key={field}
-                  className="whitespace-nowrap text-xs font-semibold"
+                  className="whitespace-nowrap text-xs font-semibold tracking-wide"
                 >
                   {field}
                 </TableHead>
               ))}
-              <TableHead className="text-xs font-semibold w-[70px] sticky right-0 bg-muted/50">
+              <TableHead className="text-xs font-semibold w-[70px] sticky right-0 bg-muted/60">
                 Action
               </TableHead>
             </TableRow>
@@ -93,29 +92,42 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
               <TableRow>
                 <TableCell
                   colSpan={ASSET_FIELDS.length + 1}
-                  className="text-center text-muted-foreground py-8"
+                  className="text-center text-muted-foreground py-12"
                 >
                   No assets found.
                 </TableCell>
               </TableRow>
             ) : (
-              pageData.map((asset) => (
-                <TableRow key={asset["Asset ID"]}>
+              pageData.map((asset, idx) => (
+                <TableRow
+                  key={asset["Asset ID"]}
+                  className={`cursor-pointer transition-colors hover:bg-primary/[0.04] ${
+                    idx % 2 === 1 ? "bg-muted/30" : ""
+                  }`}
+                  onClick={() => onViewAsset?.(asset)}
+                >
                   {ASSET_FIELDS.map((field) => (
                     <TableCell
                       key={field}
                       className="whitespace-nowrap text-xs max-w-[200px] truncate"
                       title={String(asset[field] ?? "")}
                     >
-                      {displayValue(asset[field])}
+                      {field === "Asset Category" ? (
+                        <CategoryBadge category={String(asset[field])} />
+                      ) : (
+                        displayValue(asset[field])
+                      )}
                     </TableCell>
                   ))}
-                  <TableCell className="sticky right-0 bg-background">
+                  <TableCell className="sticky right-0 bg-card">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => onViewAsset?.(asset)}
+                      className="h-7 px-2 text-xs hover:bg-primary/10 hover:text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewAsset?.(asset);
+                      }}
                     >
                       <Eye className="h-3.5 w-3.5 mr-1" />
                       View
@@ -137,7 +149,7 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
           <Button
             variant="outline"
             size="sm"
-            className="h-8"
+            className="h-8 shadow-sm"
             disabled={safePage <= 1}
             onClick={() => setPage(safePage - 1)}
           >
@@ -147,7 +159,7 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
           <Button
             variant="outline"
             size="sm"
-            className="h-8"
+            className="h-8 shadow-sm"
             disabled={safePage >= totalPages}
             onClick={() => setPage(safePage + 1)}
           >
