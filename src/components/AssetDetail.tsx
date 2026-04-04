@@ -1,6 +1,4 @@
-// AssetDetail.tsx — Full detail view for a single asset.
-// Groups 18 fields into logical sections. Supports inline editing
-// for allowed fields with validation. Shows "N/A" for empty values.
+// AssetDetail.tsx — Detail view with category badge and improved styling.
 
 import { useState } from "react";
 import { Asset, EDITABLE_FIELDS, REQUIRED_FIELDS } from "@/types/asset";
@@ -10,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Info, Cpu, Users, MapPin, ShieldCheck, Pencil, Save, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import CategoryBadge from "@/components/CategoryBadge";
 
 interface AssetDetailProps {
   asset: Asset;
@@ -17,7 +16,6 @@ interface AssetDetailProps {
   onSave?: (updated: Asset) => void;
 }
 
-/** Format ISO date to DD-MM-YYYY, fallback to raw string */
 const formatDate = (dateStr: string) => {
   try {
     return format(parseISO(dateStr), "dd-MM-yyyy");
@@ -28,7 +26,6 @@ const formatDate = (dateStr: string) => {
 
 const isEditable = (field: keyof Asset) => EDITABLE_FIELDS.includes(field);
 
-/** Display value — shows "N/A" for empty/null fields */
 const safeDisplay = (val: string | number): string => {
   const s = String(val ?? "").trim();
   return s === "" ? "N/A" : s;
@@ -46,16 +43,18 @@ const Field = ({
 }) => {
   const canEdit = editing && editable;
   return (
-    <div className={`flex flex-col gap-0.5 p-3 rounded-md ${canEdit ? "bg-primary/5 border border-primary/20" : "bg-muted/40"}`}>
-      <span className="text-xs text-muted-foreground">
-        {label} {editable && <span className="text-primary">(editable)</span>}
+    <div className={`flex flex-col gap-1 p-3 rounded-lg transition-colors ${
+      canEdit ? "bg-primary/[0.06] border border-primary/20" : "bg-muted/40"
+    }`}>
+      <span className="text-xs text-muted-foreground font-medium">
+        {label} {editable && <span className="text-primary text-[10px]">(editable)</span>}
       </span>
       {canEdit ? (
         <>
           <Input
             value={String(value)}
             onChange={(e) => onChange?.(e.target.value)}
-            className="h-7 text-sm px-2"
+            className="h-8 text-sm px-2 shadow-sm"
           />
           {error && <span className="text-xs text-destructive">{error}</span>}
         </>
@@ -69,9 +68,9 @@ const Field = ({
 };
 
 const Section = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
-  <Card>
+  <Card className="shadow-sm">
     <CardHeader className="pb-2 pt-4 px-4">
-      <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground font-medium">
+      <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground font-semibold">
         {icon} {title}
       </CardTitle>
     </CardHeader>
@@ -92,7 +91,6 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  /** Validate required editable fields are not empty */
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof Asset, string>> = {};
     for (const field of REQUIRED_FIELDS) {
@@ -105,7 +103,6 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
   };
 
   const handleSave = () => {
-    // Trim all editable text fields before saving
     const trimmed = { ...draft };
     for (const field of EDITABLE_FIELDS) {
       if (typeof trimmed[field] === "string") {
@@ -129,7 +126,6 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
     setEditing(false);
   };
 
-  /** Helper to render a field with optional display override (for dates) */
   const f = (field: keyof Asset, display?: string) => (
     <Field
       label={field}
@@ -143,15 +139,16 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Header with navigation and edit controls */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack} className="h-8">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to List
+          <Button variant="outline" size="sm" onClick={onBack} className="h-8 shadow-sm">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
-          <span className="text-sm text-muted-foreground">
-            Viewing: <span className="font-medium text-foreground">{asset["Asset ID"]}</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-foreground">{asset["Asset ID"]}</span>
+            <CategoryBadge category={asset["Asset Category"]} />
+          </div>
         </div>
         <div className="flex gap-2">
           {editing ? (
@@ -159,19 +156,18 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
               <Button size="sm" variant="outline" onClick={handleCancel} className="h-8">
                 <X className="h-4 w-4 mr-1" /> Cancel
               </Button>
-              <Button size="sm" onClick={handleSave} className="h-8">
+              <Button size="sm" onClick={handleSave} className="h-8 shadow-sm">
                 <Save className="h-4 w-4 mr-1" /> Save
               </Button>
             </>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="h-8">
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="h-8 shadow-sm">
               <Pencil className="h-4 w-4 mr-1" /> Edit
             </Button>
           )}
         </div>
       </div>
 
-      {/* Grouped sections matching Excel schema */}
       <Section title="Basic Info" icon={<Info className="h-4 w-4" />}>
         {f("S.NO")}
         {f("Company")}
