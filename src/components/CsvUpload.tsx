@@ -1,3 +1,7 @@
+// CsvUpload.tsx — CSV file import with strict header validation,
+// duplicate Asset ID detection, and preview (max 50 rows shown).
+// No heavy libraries — uses native FileReader + custom CSV parser.
+
 import { useState, useRef } from "react";
 import { Asset, ASSET_FIELDS } from "@/types/asset";
 import { Button } from "@/components/ui/button";
@@ -8,6 +12,8 @@ import {
 import { Upload, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const MAX_PREVIEW_ROWS = 50;
+
 interface CsvUploadProps {
   existingAssetIds: string[];
   onImport: (assets: Asset[]) => void;
@@ -15,6 +21,7 @@ interface CsvUploadProps {
 
 const EXPECTED_HEADERS = ASSET_FIELDS.map((f) => String(f));
 
+/** Parse a single CSV line, handling quoted fields */
 const parseCsvLine = (line: string): string[] => {
   const result: string[] = [];
   let current = "";
@@ -80,7 +87,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
         return;
       }
 
-      // Validate headers
+      // Validate headers exactly match the 18 expected columns
       const headers = parseCsvLine(lines[0]);
       const missing = EXPECTED_HEADERS.filter((h) => !headers.includes(h));
       const extra = headers.filter((h) => !EXPECTED_HEADERS.includes(h));
@@ -93,7 +100,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
         return;
       }
 
-      // Parse rows
+      // Build header→index map for flexible column ordering
       const headerIndexMap = headers.reduce<Record<string, number>>((acc, h, i) => {
         acc[h] = i;
         return acc;
@@ -112,7 +119,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
         }
         row["S.NO"] = Number(row["S.NO"]) || i;
 
-        // Validate required
+        // Validate required fields
         if (!row["Asset ID"]?.trim()) {
           rowErrors.push(`Row ${i + 1}: Asset ID is empty`);
           continue;
@@ -122,7 +129,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
           continue;
         }
 
-        // Duplicate check
+        // Check for duplicate Asset IDs
         const idLower = row["Asset ID"].toLowerCase();
         if (seenIds.has(idLower)) {
           rowErrors.push(`Row ${i + 1}: Duplicate Asset ID "${row["Asset ID"]}"`);
@@ -148,6 +155,9 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
     reset();
   };
 
+  // Limit preview display to MAX_PREVIEW_ROWS
+  const previewRows = preview?.slice(0, MAX_PREVIEW_ROWS) ?? [];
+
   return (
     <Card>
       <CardHeader className="pb-2 pt-4 px-4">
@@ -158,10 +168,10 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
       <CardContent className="px-4 pb-4 space-y-3">
         <p className="text-xs text-muted-foreground">
           Upload a <strong>.csv</strong> file with headers exactly matching:{" "}
-          <span className="font-mono text-[10px]">{EXPECTED_HEADERS.join(", ")}</span>
+          <span className="font-mono text-[10px] break-all">{EXPECTED_HEADERS.join(", ")}</span>
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <input
             ref={fileRef}
             type="file"
@@ -176,8 +186,9 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
           )}
         </div>
 
+        {/* Error display */}
         {errors.length > 0 && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded p-3 space-y-1">
+          <div className="bg-destructive/10 border border-destructive/20 rounded p-3 space-y-1 max-h-40 overflow-y-auto">
             {errors.map((err, i) => (
               <div key={i} className="flex items-start gap-2 text-xs text-destructive">
                 <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> {err}
@@ -186,6 +197,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
           </div>
         )}
 
+        {/* Preview table */}
         {preview && preview.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs text-green-600">
@@ -202,7 +214,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {preview.slice(0, 5).map((a, i) => (
+                  {previewRows.map((a, i) => (
                     <TableRow key={i}>
                       <TableCell className="text-xs">{a["S.NO"]}</TableCell>
                       <TableCell className="text-xs">{a["Asset ID"]}</TableCell>
@@ -214,8 +226,10 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
                   ))}
                 </TableBody>
               </Table>
-              {preview.length > 5 && (
-                <p className="text-[10px] text-muted-foreground p-2">...and {preview.length - 5} more rows</p>
+              {preview.length > MAX_PREVIEW_ROWS && (
+                <p className="text-[10px] text-muted-foreground p-2">
+                  Showing {MAX_PREVIEW_ROWS} of {preview.length} rows
+                </p>
               )}
             </div>
             <Button size="sm" onClick={confirmImport} className="h-8">
