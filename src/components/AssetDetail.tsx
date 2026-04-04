@@ -1,3 +1,7 @@
+// AssetDetail.tsx — Full detail view for a single asset.
+// Groups 18 fields into logical sections. Supports inline editing
+// for allowed fields with validation. Shows "N/A" for empty values.
+
 import { useState } from "react";
 import { Asset, EDITABLE_FIELDS, REQUIRED_FIELDS } from "@/types/asset";
 import { Button } from "@/components/ui/button";
@@ -13,23 +17,25 @@ interface AssetDetailProps {
   onSave?: (updated: Asset) => void;
 }
 
+/** Format ISO date to DD-MM-YYYY, fallback to raw string */
 const formatDate = (dateStr: string) => {
   try {
     return format(parseISO(dateStr), "dd-MM-yyyy");
   } catch {
-    return dateStr;
+    return dateStr || "N/A";
   }
 };
 
 const isEditable = (field: keyof Asset) => EDITABLE_FIELDS.includes(field);
 
+/** Display value — shows "N/A" for empty/null fields */
+const safeDisplay = (val: string | number): string => {
+  const s = String(val ?? "").trim();
+  return s === "" ? "N/A" : s;
+};
+
 const Field = ({
-  label,
-  value,
-  editing,
-  editable,
-  onChange,
-  error,
+  label, value, editing, editable, onChange, error,
 }: {
   label: string;
   value: string | number;
@@ -54,7 +60,9 @@ const Field = ({
           {error && <span className="text-xs text-destructive">{error}</span>}
         </>
       ) : (
-        <span className="text-sm font-medium text-foreground">{value}</span>
+        <span className="text-sm font-medium text-foreground break-words">
+          {safeDisplay(value)}
+        </span>
       )}
     </div>
   );
@@ -67,7 +75,7 @@ const Section = ({ title, icon, children }: { title: string; icon: React.ReactNo
         {icon} {title}
       </CardTitle>
     </CardHeader>
-    <CardContent className="px-4 pb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+    <CardContent className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
       {children}
     </CardContent>
   </Card>
@@ -84,6 +92,7 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
+  /** Validate required editable fields are not empty */
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof Asset, string>> = {};
     for (const field of REQUIRED_FIELDS) {
@@ -96,7 +105,7 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
   };
 
   const handleSave = () => {
-    // Trim all editable text fields
+    // Trim all editable text fields before saving
     const trimmed = { ...draft };
     for (const field of EDITABLE_FIELDS) {
       if (typeof trimmed[field] === "string") {
@@ -120,6 +129,7 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
     setEditing(false);
   };
 
+  /** Helper to render a field with optional display override (for dates) */
   const f = (field: keyof Asset, display?: string) => (
     <Field
       label={field}
@@ -133,7 +143,8 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Header with navigation and edit controls */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={onBack} className="h-8">
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to List
@@ -160,6 +171,7 @@ const AssetDetail = ({ asset, onBack, onSave }: AssetDetailProps) => {
         </div>
       </div>
 
+      {/* Grouped sections matching Excel schema */}
       <Section title="Basic Info" icon={<Info className="h-4 w-4" />}>
         {f("S.NO")}
         {f("Company")}

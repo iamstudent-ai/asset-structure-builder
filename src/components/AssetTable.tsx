@@ -1,3 +1,7 @@
+// AssetTable.tsx — Paginated, searchable table for all 18 asset fields.
+// Supports horizontal scroll for small screens. Displays "N/A" for empty values.
+// Renders only visible page rows for performance.
+
 import { useState, useMemo } from "react";
 import { Asset, ASSET_FIELDS } from "@/types/asset";
 import { Input } from "@/components/ui/input";
@@ -13,6 +17,12 @@ interface AssetTableProps {
   assets: Asset[];
   onViewAsset?: (asset: Asset) => void;
 }
+
+/** Display value — shows "N/A" for empty/null fields, truncates long text */
+const displayValue = (val: string | number): string => {
+  const s = String(val ?? "").trim();
+  return s === "" ? "N/A" : s;
+};
 
 const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
   const [search, setSearch] = useState("");
@@ -37,7 +47,6 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
     safePage * ROWS_PER_PAGE
   );
 
-  // Reset to page 1 when search changes
   const handleSearch = (value: string) => {
     setSearch(value);
     setPage(1);
@@ -46,8 +55,8 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
   return (
     <div className="space-y-4">
       {/* Search Bar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by Asset ID, Serial Number, or User..."
@@ -61,9 +70,9 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
         </span>
       </div>
 
-      {/* Table */}
+      {/* Table with horizontal scroll */}
       <div className="border rounded-md overflow-x-auto">
-        <Table>
+        <Table className="min-w-[1400px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {ASSET_FIELDS.map((field) => (
@@ -74,7 +83,7 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
                   {field}
                 </TableHead>
               ))}
-              <TableHead className="text-xs font-semibold w-[70px]">
+              <TableHead className="text-xs font-semibold w-[70px] sticky right-0 bg-muted/50">
                 Action
               </TableHead>
             </TableRow>
@@ -95,12 +104,13 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
                   {ASSET_FIELDS.map((field) => (
                     <TableCell
                       key={field}
-                      className="whitespace-nowrap text-xs"
+                      className="whitespace-nowrap text-xs max-w-[200px] truncate"
+                      title={String(asset[field] ?? "")}
                     >
-                      {String(asset[field])}
+                      {displayValue(asset[field])}
                     </TableCell>
                   ))}
-                  <TableCell>
+                  <TableCell className="sticky right-0 bg-background">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -119,7 +129,7 @@ const AssetTable = ({ assets, onViewAsset }: AssetTableProps) => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-xs text-muted-foreground">
           Page {safePage} of {totalPages}
         </span>
