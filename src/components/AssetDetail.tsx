@@ -14,6 +14,7 @@ interface AssetDetailProps {
   asset: Asset;
   onBack: () => void;
   onSave?: (updated: Asset) => void;
+  readOnly?: boolean;
 }
 
 const formatDate = (dateStr: string) => {
