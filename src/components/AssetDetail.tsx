@@ -151,22 +151,24 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false }: AssetDetailPro
             <CategoryBadge category={asset["Asset Category"]} />
           </div>
         </div>
-        <div className="flex gap-2">
-          {editing ? (
-            <>
-              <Button size="sm" variant="outline" onClick={handleCancel} className="h-8">
-                <X className="h-4 w-4 mr-1" /> Cancel
+        {!readOnly && (
+          <div className="flex gap-2">
+            {editing ? (
+              <>
+                <Button size="sm" variant="outline" onClick={handleCancel} className="h-8">
+                  <X className="h-4 w-4 mr-1" /> Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave} className="h-8 shadow-sm">
+                  <Save className="h-4 w-4 mr-1" /> Save
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="h-8 shadow-sm">
+                <Pencil className="h-4 w-4 mr-1" /> Edit
               </Button>
-              <Button size="sm" onClick={handleSave} className="h-8 shadow-sm">
-                <Save className="h-4 w-4 mr-1" /> Save
-              </Button>
-            </>
-          ) : (
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="h-8 shadow-sm">
-              <Pencil className="h-4 w-4 mr-1" /> Edit
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Section title="Basic Info" icon={<Info className="h-4 w-4" />}>
