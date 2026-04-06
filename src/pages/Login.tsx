@@ -173,10 +173,6 @@ const Login = () => {
             </div>
           </form>
 
-          {/* Info note */}
-          <p className="text-[10px] text-muted-foreground text-center mt-4">
-            First user to sign up automatically gets Admin access.
-          </p>
         </CardContent>
       </Card>
     </div>
