@@ -79,7 +79,11 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const text = ev.target?.result as string;
+      let text = (ev.target?.result as string).replace(/^\uFEFF/, ""); // strip BOM
+      // Auto-detect tab-delimited files
+      const firstLine = text.split(/\r?\n/)[0] || "";
+      const isTabDelimited = firstLine.includes("\t") && !firstLine.includes(",");
+      if (isTabDelimited) text = text.replace(/\t/g, ",");
       const lines = text.split(/\r?\n/).filter((l) => l.trim());
       if (lines.length < 2) {
         setErrors(["File is empty or has no data rows."]);
@@ -87,24 +91,35 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
         return;
       }
 
-      // Validate headers exactly match the 18 expected columns
-      const headers = parseCsvLine(lines[0]);
-      const missing = EXPECTED_HEADERS.filter((h) => !headers.includes(h));
-      const extra = headers.filter((h) => !EXPECTED_HEADERS.includes(h));
-      if (missing.length > 0 || extra.length > 0) {
-        const errs: string[] = [];
-        if (missing.length) errs.push(`Missing columns: ${missing.join(", ")}`);
-        if (extra.length) errs.push(`Unexpected columns: ${extra.join(", ")}`);
-        setErrors(errs);
+      // Normalize headers: strip BOM, trim, collapse whitespace
+      const rawHeaders = parseCsvLine(lines[0]);
+      const normalize = (s: string) =>
+        s.replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+      const normalizedExpected = EXPECTED_HEADERS.map(normalize);
+      const normalizedHeaders = rawHeaders.map(normalize);
+
+      // Build mapping from normalized expected → actual index
+      const headerIndexMap: Record<string, number> = {};
+      const unmatchedExpected: string[] = [];
+
+      for (let ei = 0; ei < EXPECTED_HEADERS.length; ei++) {
+        const idx = normalizedHeaders.indexOf(normalizedExpected[ei]);
+        if (idx === -1) {
+          unmatchedExpected.push(EXPECTED_HEADERS[ei]);
+        } else {
+          headerIndexMap[EXPECTED_HEADERS[ei]] = idx;
+        }
+      }
+
+      if (unmatchedExpected.length > 0) {
+        setErrors([
+          "Invalid CSV format. Please ensure headers match the required format.",
+          `Missing or incorrect columns: ${unmatchedExpected.join(", ")}`,
+        ]);
         setPreview(null);
         return;
       }
-
-      // Build header→index map for flexible column ordering
-      const headerIndexMap = headers.reduce<Record<string, number>>((acc, h, i) => {
-        acc[h] = i;
-        return acc;
-      }, {});
 
       const rowErrors: string[] = [];
       const parsed: Asset[] = [];
