@@ -167,8 +167,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
       </CardHeader>
       <CardContent className="px-4 pb-4 space-y-3">
         <p className="text-xs text-muted-foreground">
-          Upload a <strong>.csv</strong> file with headers exactly matching:{" "}
-          <span className="font-mono text-[10px] break-all">{EXPECTED_HEADERS.join(", ")}</span>
+          Select a <strong>.csv</strong> file matching the asset template format.
         </p>
 
         <div className="flex items-center gap-2 flex-wrap">
