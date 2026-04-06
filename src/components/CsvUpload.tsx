@@ -79,7 +79,11 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const text = ev.target?.result as string;
+      let text = (ev.target?.result as string).replace(/^\uFEFF/, ""); // strip BOM
+      // Auto-detect tab-delimited files
+      const firstLine = text.split(/\r?\n/)[0] || "";
+      const isTabDelimited = firstLine.includes("\t") && !firstLine.includes(",");
+      if (isTabDelimited) text = text.replace(/\t/g, ",");
       const lines = text.split(/\r?\n/).filter((l) => l.trim());
       if (lines.length < 2) {
         setErrors(["File is empty or has no data rows."]);
