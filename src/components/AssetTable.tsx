@@ -204,7 +204,9 @@ const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin }: AssetTable
                       className="whitespace-nowrap text-xs max-w-[200px] truncate"
                       title={String(asset[field] ?? "")}
                     >
-                      {field === "Asset Category" ? (
+                      {field === "S.NO" ? (
+                        (safePage - 1) * ROWS_PER_PAGE + idx + 1
+                      ) : field === "Asset Category" ? (
                         <CategoryBadge category={String(asset[field])} />
                       ) : (
                         displayValue(asset[field])
