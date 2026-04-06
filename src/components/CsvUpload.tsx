@@ -87,24 +87,35 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
         return;
       }
 
-      // Validate headers exactly match the 18 expected columns
-      const headers = parseCsvLine(lines[0]);
-      const missing = EXPECTED_HEADERS.filter((h) => !headers.includes(h));
-      const extra = headers.filter((h) => !EXPECTED_HEADERS.includes(h));
-      if (missing.length > 0 || extra.length > 0) {
-        const errs: string[] = [];
-        if (missing.length) errs.push(`Missing columns: ${missing.join(", ")}`);
-        if (extra.length) errs.push(`Unexpected columns: ${extra.join(", ")}`);
-        setErrors(errs);
+      // Normalize headers: strip BOM, trim, collapse whitespace
+      const rawHeaders = parseCsvLine(lines[0]);
+      const normalize = (s: string) =>
+        s.replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim().toLowerCase();
+
+      const normalizedExpected = EXPECTED_HEADERS.map(normalize);
+      const normalizedHeaders = rawHeaders.map(normalize);
+
+      // Build mapping from normalized expected → actual index
+      const headerIndexMap: Record<string, number> = {};
+      const unmatchedExpected: string[] = [];
+
+      for (let ei = 0; ei < EXPECTED_HEADERS.length; ei++) {
+        const idx = normalizedHeaders.indexOf(normalizedExpected[ei]);
+        if (idx === -1) {
+          unmatchedExpected.push(EXPECTED_HEADERS[ei]);
+        } else {
+          headerIndexMap[EXPECTED_HEADERS[ei]] = idx;
+        }
+      }
+
+      if (unmatchedExpected.length > 0) {
+        setErrors([
+          "Invalid CSV format. Please ensure headers match the required format.",
+          `Missing or incorrect columns: ${unmatchedExpected.join(", ")}`,
+        ]);
         setPreview(null);
         return;
       }
-
-      // Build header→index map for flexible column ordering
-      const headerIndexMap = headers.reduce<Record<string, number>>((acc, h, i) => {
-        acc[h] = i;
-        return acc;
-      }, {});
 
       const rowErrors: string[] = [];
       const parsed: Asset[] = [];
