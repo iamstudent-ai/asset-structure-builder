@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Asset } from "@/types/asset";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchAssets, addAsset, updateAsset, importAssets } from "@/lib/assetService";
+import { fetchAssets, addAsset, updateAsset, importAssets, deleteAsset } from "@/lib/assetService";
 import AssetTable from "@/components/AssetTable";
 import AssetDetail from "@/components/AssetDetail";
 import DashboardSummary from "@/components/DashboardSummary";
@@ -18,11 +18,11 @@ const Index = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { isAdmin } = useAuth();
   const { toast } = useToast();
 
-  // Load assets from Supabase
   useEffect(() => {
     loadAssets();
   }, []);
@@ -72,6 +72,18 @@ const Index = () => {
     }
   };
 
+  const handleDeleteAssets = async (assetIds: string[]) => {
+    try {
+      for (const id of assetIds) {
+        await deleteAsset(id);
+      }
+      setAssets((prev) => prev.filter((a) => !assetIds.includes(a["Asset ID"])));
+      toast({ title: "Deleted", description: `${assetIds.length} asset(s) deleted successfully.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to delete", variant: "destructive" });
+    }
+  };
+
   // Category data
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -84,9 +96,15 @@ const Index = () => {
   const categoryNames = useMemo(() => Object.keys(categoryCounts).sort(), [categoryCounts]);
 
   const filteredAssets = useMemo(() => {
-    if (!categoryFilter) return assets;
-    return assets.filter((a) => a["Asset Category"] === categoryFilter);
-  }, [assets, categoryFilter]);
+    let result = assets;
+    if (companyFilter) {
+      result = result.filter((a) => (a["Company"] || "Unknown") === companyFilter);
+    }
+    if (categoryFilter) {
+      result = result.filter((a) => a["Asset Category"] === categoryFilter);
+    }
+    return result;
+  }, [assets, categoryFilter, companyFilter]);
 
   // Detail view
   if (selectedAsset) {
@@ -131,7 +149,11 @@ const Index = () => {
             </div>
           ) : (
             <>
-              <DashboardSummary assets={assets} />
+              <DashboardSummary
+                assets={assets}
+                companyFilter={companyFilter}
+                onCompanySelect={setCompanyFilter}
+              />
 
               {/* Category filter */}
               <CategoryFilter
@@ -159,7 +181,12 @@ const Index = () => {
                 </div>
               )}
 
-              <AssetTable assets={filteredAssets} onViewAsset={setSelectedAsset} />
+              <AssetTable
+                assets={filteredAssets}
+                onViewAsset={setSelectedAsset}
+                onDeleteAssets={isAdmin ? handleDeleteAssets : undefined}
+                isAdmin={isAdmin}
+              />
             </>
           )}
         </div>
