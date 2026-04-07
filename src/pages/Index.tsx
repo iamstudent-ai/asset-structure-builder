@@ -12,7 +12,10 @@ import CsvUpload from "@/components/CsvUpload";
 import AddAssetForm from "@/components/AddAssetForm";
 import CategoryFilter from "@/components/CategoryFilter";
 import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { generateAssetReport } from "@/lib/pdfReport";
 
 const Index = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -178,6 +181,21 @@ const Index = () => {
                     existingAssetIds={assets.map((a) => a["Asset ID"])}
                     onImport={handleImport}
                   />
+                </div>
+              )}
+
+              {/* Download Report */}
+              {assets.length > 0 && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1.5"
+                    onClick={() => generateAssetReport(filteredAssets)}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download Report
+                  </Button>
                 </div>
               )}
 
