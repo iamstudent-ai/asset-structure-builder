@@ -5,7 +5,8 @@ import { Asset, EDITABLE_FIELDS, REQUIRED_FIELDS } from "@/types/asset";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Info, Cpu, Users, MapPin, ShieldCheck, Pencil, Save, X } from "lucide-react";
+import { ArrowLeft, Info, Cpu, Users, MapPin, ShieldCheck, Pencil, Save, X, FileDown } from "lucide-react";
+import { generateSingleAssetReport } from "@/lib/assetPdfReport";
 import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import CategoryBadge from "@/components/CategoryBadge";
@@ -145,6 +146,9 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false }: AssetDetailPro
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={onBack} className="h-8 shadow-sm">
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => generateSingleAssetReport(asset)} className="h-8 shadow-sm">
+            <FileDown className="h-4 w-4 mr-1" /> Download PDF
           </Button>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-foreground">{asset["Asset ID"]}</span>

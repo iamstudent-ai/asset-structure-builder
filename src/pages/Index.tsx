@@ -12,6 +12,7 @@ import CsvUpload from "@/components/CsvUpload";
 import AddAssetForm from "@/components/AddAssetForm";
 import CategoryFilter from "@/components/CategoryFilter";
 import Navbar from "@/components/Navbar";
+import LiveClock from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -137,13 +138,16 @@ const Index = () => {
       <Navbar />
       <div className="min-h-screen bg-background p-4 md:p-8">
         <div className="max-w-[1400px] mx-auto space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              IT Asset Management
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Track and manage all company assets
-            </p>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                IT Asset Management
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Track and manage all company assets
+              </p>
+            </div>
+            <LiveClock />
           </div>
 
           {loading ? (
