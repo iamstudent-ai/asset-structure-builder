@@ -13,6 +13,7 @@ import AddAssetForm from "@/components/AddAssetForm";
 import CategoryFilter from "@/components/CategoryFilter";
 import Navbar from "@/components/Navbar";
 import { useToast } from "@/hooks/use-toast";
+import { generateAssetReport } from "@/lib/pdfReport";
 
 const Index = () => {
   const [assets, setAssets] = useState<Asset[]>([]);

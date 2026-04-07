@@ -1,6 +1,5 @@
-// CsvUpload.tsx — CSV file import with strict header validation,
-// duplicate Asset ID detection, and preview (max 50 rows shown).
-// No heavy libraries — uses native FileReader + custom CSV parser.
+// CsvUpload.tsx — CSV file import with partial upload support,
+// duplicate/empty Asset ID skip, and N/A fill for empty fields.
 
 import { useState, useRef } from "react";
 import { Asset, ASSET_FIELDS } from "@/types/asset";
@@ -9,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from "@/components/ui/table";
-import { Upload, AlertTriangle, CheckCircle, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Upload, CheckCircle, X, Download } from "lucide-react";
+import { toast } from "sonner";
 
 const MAX_PREVIEW_ROWS = 50;
 
@@ -21,7 +20,6 @@ interface CsvUploadProps {
 
 const EXPECTED_HEADERS = ASSET_FIELDS.map((f) => String(f));
 
-/** Parse a single CSV line, handling quoted fields */
 const parseCsvLine = (line: string): string[] => {
   const result: string[] = [];
   let current = "";
@@ -29,39 +27,54 @@ const parseCsvLine = (line: string): string[] => {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else if (ch === '"') {
-        inQuotes = false;
-      } else {
-        current += ch;
-      }
+      if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { current += ch; }
     } else {
-      if (ch === '"') {
-        inQuotes = true;
-      } else if (ch === ",") {
-        result.push(current.trim());
-        current = "";
-      } else {
-        current += ch;
-      }
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ",") { result.push(current.trim()); current = ""; }
+      else { current += ch; }
     }
   }
   result.push(current.trim());
   return result;
 };
 
+/** Normalize category value: trim + proper case */
+const normalizeCategory = (val: string): string => {
+  const trimmed = val.trim();
+  if (!trimmed) return "N/A";
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+};
+
+/** Download a CSV template with correct headers + 1 sample row */
+const downloadTemplate = () => {
+  const sampleRow = [
+    "1", "Acme Corp", "AST-001", "Laptop", "Dell", "Latitude 5520", "Windows 11",
+    "IT Dept", "SN-12345", "John Doe", "HQ Building", "Office A", "Engineering",
+    "Internal", "2024-01-15", "2027-01-15", "2026-01-15", "Active"
+  ];
+  const csv = EXPECTED_HEADERS.join(",") + "\n" + sampleRow.join(",") + "\n";
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "asset_template.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
   const [preview, setPreview] = useState<Asset[] | null>(null);
-  const [errors, setErrors] = useState<string[]>([]);
+  const [skippedCount, setSkippedCount] = useState(0);
+  const [skippedReasons, setSkippedReasons] = useState<string[]>([]);
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
 
   const reset = () => {
     setPreview(null);
-    setErrors([]);
+    setSkippedCount(0);
+    setSkippedReasons([]);
     setFileName("");
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -72,26 +85,24 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
     setFileName(file.name);
 
     if (!file.name.endsWith(".csv")) {
-      setErrors(["Only .csv files are accepted. Please convert your Excel file to CSV first."]);
+      toast.error("Only .csv files are accepted.");
       setPreview(null);
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      let text = (ev.target?.result as string).replace(/^\uFEFF/, ""); // strip BOM
-      // Auto-detect tab-delimited files
+      let text = (ev.target?.result as string).replace(/^\uFEFF/, "");
       const firstLine = text.split(/\r?\n/)[0] || "";
       const isTabDelimited = firstLine.includes("\t") && !firstLine.includes(",");
       if (isTabDelimited) text = text.replace(/\t/g, ",");
       const lines = text.split(/\r?\n/).filter((l) => l.trim());
       if (lines.length < 2) {
-        setErrors(["File is empty or has no data rows."]);
+        toast.error("File is empty or has no data rows.");
         setPreview(null);
         return;
       }
 
-      // Normalize headers: strip BOM, trim, collapse whitespace
       const rawHeaders = parseCsvLine(lines[0]);
       const normalize = (s: string) =>
         s.replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -99,65 +110,66 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
       const normalizedExpected = EXPECTED_HEADERS.map(normalize);
       const normalizedHeaders = rawHeaders.map(normalize);
 
-      // Build mapping from normalized expected → actual index
       const headerIndexMap: Record<string, number> = {};
       const unmatchedExpected: string[] = [];
 
       for (let ei = 0; ei < EXPECTED_HEADERS.length; ei++) {
         const idx = normalizedHeaders.indexOf(normalizedExpected[ei]);
-        if (idx === -1) {
-          unmatchedExpected.push(EXPECTED_HEADERS[ei]);
-        } else {
-          headerIndexMap[EXPECTED_HEADERS[ei]] = idx;
-        }
+        if (idx === -1) unmatchedExpected.push(EXPECTED_HEADERS[ei]);
+        else headerIndexMap[EXPECTED_HEADERS[ei]] = idx;
       }
 
       if (unmatchedExpected.length > 0) {
-        setErrors([
-          "Invalid CSV format. Please ensure headers match the required format.",
-          `Missing or incorrect columns: ${unmatchedExpected.join(", ")}`,
-        ]);
+        toast.error(`Invalid CSV format. Missing columns: ${unmatchedExpected.join(", ")}`);
         setPreview(null);
         return;
       }
 
-      const rowErrors: string[] = [];
+      const reasons: string[] = [];
       const parsed: Asset[] = [];
       const seenIds = new Set<string>(existingAssetIds.map((id) => id.toLowerCase()));
+      let skipped = 0;
 
       for (let i = 1; i < lines.length; i++) {
         const values = parseCsvLine(lines[i]);
         const row = {} as any;
         for (const field of EXPECTED_HEADERS) {
           const idx = headerIndexMap[field];
-          row[field] = values[idx] ?? "";
+          const val = (values[idx] ?? "").trim();
+          // Fill empty non-required fields with N/A
+          row[field] = val === "" ? "N/A" : val;
         }
         row["S.NO"] = Number(row["S.NO"]) || i;
 
-        // Validate required fields
-        if (!row["Asset ID"]?.trim()) {
-          rowErrors.push(`Row ${i + 1}: Asset ID is empty`);
-          continue;
+        // Normalize category
+        if (row["Asset Category"]) {
+          row["Asset Category"] = normalizeCategory(row["Asset Category"]);
         }
-        if (!row["Serial Number"]?.trim()) {
-          rowErrors.push(`Row ${i + 1}: Serial Number is empty`);
+
+        // Skip if Asset ID is empty or N/A
+        const assetId = row["Asset ID"]?.trim();
+        if (!assetId || assetId.toLowerCase() === "n/a") {
+          skipped++;
+          reasons.push(`Row ${i + 1}: Empty/N/A Asset ID — skipped`);
           continue;
         }
 
-        // Check for duplicate Asset IDs
-        const idLower = row["Asset ID"].toLowerCase();
+        // Skip duplicate Asset ID
+        const idLower = assetId.toLowerCase();
         if (seenIds.has(idLower)) {
-          rowErrors.push(`Row ${i + 1}: Duplicate Asset ID "${row["Asset ID"]}"`);
+          skipped++;
+          reasons.push(`Row ${i + 1}: Duplicate Asset ID "${assetId}" — skipped`);
           continue;
         }
         seenIds.add(idLower);
         parsed.push(row as Asset);
       }
 
-      setErrors(rowErrors);
+      setSkippedCount(skipped);
+      setSkippedReasons(reasons);
       setPreview(parsed.length > 0 ? parsed : null);
-      if (parsed.length === 0 && rowErrors.length === 0) {
-        setErrors(["No valid data rows found."]);
+      if (parsed.length === 0 && skipped === 0) {
+        toast.error("No valid data rows found.");
       }
     };
     reader.readAsText(file);
@@ -166,11 +178,10 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
   const confirmImport = () => {
     if (!preview) return;
     onImport(preview);
-    toast({ title: "Import Successful", description: `${preview.length} asset(s) added.` });
+    toast.success(`${preview.length} record(s) added, ${skippedCount} skipped (invalid/duplicate Asset ID)`);
     reset();
   };
 
-  // Limit preview display to MAX_PREVIEW_ROWS
   const previewRows = preview?.slice(0, MAX_PREVIEW_ROWS) ?? [];
 
   return (
@@ -181,10 +192,6 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4 space-y-3">
-        <p className="text-xs text-muted-foreground">
-          Select a <strong>.csv</strong> file matching the asset template format.
-        </p>
-
         <div className="flex items-center gap-2 flex-wrap">
           <input
             ref={fileRef}
@@ -193,20 +200,21 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
             onChange={handleFile}
             className="text-xs file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-primary file:text-primary-foreground"
           />
-          {(preview || errors.length > 0) && (
+          <Button variant="outline" size="sm" onClick={downloadTemplate} className="h-7 text-xs gap-1">
+            <Download className="h-3 w-3" /> Download Template
+          </Button>
+          {(preview || skippedCount > 0) && (
             <Button variant="ghost" size="sm" onClick={reset} className="h-7 text-xs">
               <X className="h-3 w-3 mr-1" /> Clear
             </Button>
           )}
         </div>
 
-        {/* Error display */}
-        {errors.length > 0 && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded p-3 space-y-1 max-h-40 overflow-y-auto">
-            {errors.map((err, i) => (
-              <div key={i} className="flex items-start gap-2 text-xs text-destructive">
-                <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> {err}
-              </div>
+        {/* Skipped rows info */}
+        {skippedReasons.length > 0 && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded p-3 space-y-1 max-h-32 overflow-y-auto">
+            {skippedReasons.map((r, i) => (
+              <div key={i} className="text-xs text-amber-700 dark:text-amber-400">{r}</div>
             ))}
           </div>
         )}
@@ -216,7 +224,8 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs text-green-600">
               <CheckCircle className="h-3.5 w-3.5" />
-              {preview.length} valid row(s) ready to import from "{fileName}"
+              {preview.length} valid row(s) ready to import
+              {skippedCount > 0 && `, ${skippedCount} skipped`}
             </div>
             <div className="border rounded overflow-x-auto max-h-48">
               <Table>

@@ -159,18 +159,18 @@ const Login = () => {
               )}
             </Button>
 
-            {/* Toggle Sign In / Sign Up */}
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => { setIsSignUp(!isSignUp); setError(""); }}
-                className="text-xs text-primary hover:underline"
-              >
-                {isSignUp
-                  ? "Already have an account? Sign in"
-                  : "Don't have an account? Sign up"}
-              </button>
-            </div>
+            {/* Toggle Sign In / Sign Up — only show when in sign-up mode */}
+            {isSignUp && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setIsSignUp(false); setError(""); }}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Already have an account? Sign in
+                </button>
+              </div>
+            )}
           </form>
 
         </CardContent>
