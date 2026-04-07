@@ -182,6 +182,21 @@ const Index = () => {
                 </div>
               )}
 
+              {/* Download Report */}
+              {assets.length > 0 && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1.5"
+                    onClick={() => generateAssetReport(filteredAssets)}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download Report
+                  </Button>
+                </div>
+              )}
+
               <AssetTable
                 assets={filteredAssets}
                 onViewAsset={setSelectedAsset}
