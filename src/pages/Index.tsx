@@ -12,6 +12,8 @@ import CsvUpload from "@/components/CsvUpload";
 import AddAssetForm from "@/components/AddAssetForm";
 import CategoryFilter from "@/components/CategoryFilter";
 import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateAssetReport } from "@/lib/pdfReport";
 
