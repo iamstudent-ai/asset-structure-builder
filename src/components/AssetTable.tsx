@@ -1,5 +1,5 @@
-// AssetTable.tsx — Paginated, searchable table with category badges,
-// striped rows, hover effects, checkboxes for bulk delete, and category filtering support.
+// AssetTable.tsx — Paginated table with global search, warranty badges,
+// category badges, checkboxes, green selection highlight.
 
 import { useState, useMemo } from "react";
 import { Asset, ASSET_FIELDS } from "@/types/asset";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Search, Eye, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import CategoryBadge from "@/components/CategoryBadge";
+import WarrantyBadge from "@/components/WarrantyBadge";
 
 const ROWS_PER_PAGE = 10;
 
@@ -24,42 +25,34 @@ interface AssetTableProps {
   onViewAsset?: (asset: Asset) => void;
   onDeleteAssets?: (assetIds: string[]) => void;
   isAdmin?: boolean;
+  globalSearch: string;
+  onGlobalSearchChange: (val: string) => void;
 }
 
-/** Display value — shows "N/A" for empty/null fields */
 const displayValue = (val: string | number): string => {
   const s = String(val ?? "").trim();
   return s === "" ? "N/A" : s;
 };
 
-const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin }: AssetTableProps) => {
-  const [search, setSearch] = useState("");
+const WARRANTY_FIELDS: (keyof Asset)[] = ["Warranty End Date", "EOL/EOS"];
+
+const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin, globalSearch, onGlobalSearchChange }: AssetTableProps) => {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return assets;
-    const q = search.toLowerCase();
-    return assets.filter(
-      (a) =>
-        a["Asset ID"].toLowerCase().includes(q) ||
-        a["Serial Number"].toLowerCase().includes(q) ||
-        a["Assigned User"].toLowerCase().includes(q)
-    );
-  }, [assets, search]);
+  // Reset page when search changes
+  const handleSearch = (v: string) => {
+    onGlobalSearchChange(v);
+    setPage(1);
+  };
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(assets.length / ROWS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
-  const pageData = filtered.slice(
+  const pageData = assets.slice(
     (safePage - 1) * ROWS_PER_PAGE,
     safePage * ROWS_PER_PAGE
   );
-
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    setPage(1);
-  };
 
   const toggleSelect = (assetId: string) => {
     setSelected((prev) => {
@@ -98,22 +91,21 @@ const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin }: AssetTable
 
   return (
     <div className="space-y-4">
-      {/* Search Bar + Bulk Actions */}
+      {/* Global Search Bar */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by Asset ID, Serial Number, or User..."
-            value={search}
+            placeholder="Search across all fields..."
+            value={globalSearch}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-9 h-9 shadow-sm"
           />
         </div>
         <span className="text-sm text-muted-foreground">
-          {filtered.length} asset{filtered.length !== 1 ? "s" : ""}
+          {assets.length} asset{assets.length !== 1 ? "s" : ""}
         </span>
 
-        {/* Bulk delete button — Admin only */}
         {isAdmin && selected.size > 0 && (
           <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
             <AlertDialogTrigger asChild>
@@ -181,83 +173,92 @@ const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin }: AssetTable
                 </TableCell>
               </TableRow>
             ) : (
-              pageData.map((asset, idx) => (
-                <TableRow
-                  key={asset["Asset ID"]}
-                  className={`cursor-pointer transition-colors hover:bg-primary/[0.04] ${
-                    idx % 2 === 1 ? "bg-muted/30" : ""
-                  } ${selected.has(asset["Asset ID"]) ? "bg-primary/[0.06]" : ""}`}
-                  onClick={() => onViewAsset?.(asset)}
-                >
-                  {isAdmin && (
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selected.has(asset["Asset ID"])}
-                        onCheckedChange={() => toggleSelect(asset["Asset ID"])}
-                        aria-label={`Select ${asset["Asset ID"]}`}
-                      />
-                    </TableCell>
-                  )}
-                  {ASSET_FIELDS.map((field) => (
-                    <TableCell
-                      key={field}
-                      className="whitespace-nowrap text-xs max-w-[200px] truncate"
-                      title={String(asset[field] ?? "")}
-                    >
-                      {field === "S.NO" ? (
-                        (safePage - 1) * ROWS_PER_PAGE + idx + 1
-                      ) : field === "Asset Category" ? (
-                        <CategoryBadge category={String(asset[field])} />
-                      ) : (
-                        displayValue(asset[field])
-                      )}
-                    </TableCell>
-                  ))}
-                  <TableCell className="sticky right-0 bg-card" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs hover:bg-primary/10 hover:text-primary"
-                        onClick={() => onViewAsset?.(asset)}
+              pageData.map((asset, idx) => {
+                const isSelected = selected.has(asset["Asset ID"]);
+                return (
+                  <TableRow
+                    key={asset["Asset ID"]}
+                    className={`cursor-pointer transition-colors hover:bg-primary/[0.04] ${
+                      idx % 2 === 1 ? "bg-muted/30" : ""
+                    } ${isSelected ? "bg-green-500/10 hover:bg-green-500/15 border-l-2 border-l-green-500" : ""}`}
+                    onClick={() => onViewAsset?.(asset)}
+                  >
+                    {isAdmin && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleSelect(asset["Asset ID"])}
+                          aria-label={`Select ${asset["Asset ID"]}`}
+                          className={isSelected ? "border-green-600 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" : ""}
+                        />
+                      </TableCell>
+                    )}
+                    {ASSET_FIELDS.map((field) => (
+                      <TableCell
+                        key={field}
+                        className="whitespace-nowrap text-xs max-w-[200px] truncate"
+                        title={String(asset[field] ?? "")}
                       >
-                        <Eye className="h-3.5 w-3.5 mr-1" />
-                        View
-                      </Button>
-                      {isAdmin && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Asset</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete asset "{asset["Asset ID"]}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => onDeleteAssets?.([asset["Asset ID"]])}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        {field === "S.NO" ? (
+                          (safePage - 1) * ROWS_PER_PAGE + idx + 1
+                        ) : field === "Asset Category" ? (
+                          <CategoryBadge category={String(asset[field])} />
+                        ) : WARRANTY_FIELDS.includes(field) ? (
+                          <div className="flex items-center gap-1.5">
+                            <span>{displayValue(asset[field])}</span>
+                            <WarrantyBadge dateStr={String(asset[field])} compact />
+                          </div>
+                        ) : (
+                          displayValue(asset[field])
+                        )}
+                      </TableCell>
+                    ))}
+                    <TableCell className="sticky right-0 bg-card" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs hover:bg-primary/10 hover:text-primary"
+                          onClick={() => onViewAsset?.(asset)}
+                        >
+                          <Eye className="h-3.5 w-3.5 mr-1" />
+                          View
+                        </Button>
+                        {isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs hover:bg-destructive/10 hover:text-destructive"
                               >
-                                Confirm Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Asset</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete asset "{asset["Asset ID"]}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onDeleteAssets?.([asset["Asset ID"]])}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Confirm Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
