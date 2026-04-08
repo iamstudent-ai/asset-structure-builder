@@ -1,10 +1,10 @@
 // Index.tsx — Main page for IT Asset Management.
-// Loads data from Supabase. Role-based UI controls.
 
 import { useState, useMemo, useEffect } from "react";
 import { Asset } from "@/types/asset";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchAssets, addAsset, updateAsset, importAssets, deleteAsset } from "@/lib/assetService";
+import { getWarrantyStatus } from "@/lib/warrantyUtils";
 import AssetTable from "@/components/AssetTable";
 import AssetDetail from "@/components/AssetDetail";
 import DashboardSummary from "@/components/DashboardSummary";
@@ -23,13 +23,13 @@ const Index = () => {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
+  const [specialFilter, setSpecialFilter] = useState<string | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const { isAdmin } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadAssets();
-  }, []);
+  useEffect(() => { loadAssets(); }, []);
 
   const loadAssets = async () => {
     try {
@@ -46,9 +46,7 @@ const Index = () => {
   const handleSave = async (updated: Asset) => {
     try {
       const saved = await updateAsset(updated);
-      setAssets((prev) =>
-        prev.map((a) => (a["Asset ID"] === saved["Asset ID"] ? saved : a))
-      );
+      setAssets((prev) => prev.map((a) => (a["Asset ID"] === saved["Asset ID"] ? saved : a)));
       setSelectedAsset(saved);
       toast({ title: "Saved", description: "Asset updated successfully." });
     } catch (err: any) {
@@ -78,9 +76,7 @@ const Index = () => {
 
   const handleDeleteAssets = async (assetIds: string[]) => {
     try {
-      for (const id of assetIds) {
-        await deleteAsset(id);
-      }
+      for (const id of assetIds) await deleteAsset(id);
       setAssets((prev) => prev.filter((a) => !assetIds.includes(a["Asset ID"])));
       toast({ title: "Deleted", description: `${assetIds.length} asset(s) deleted successfully.` });
     } catch (err: any) {
@@ -88,27 +84,53 @@ const Index = () => {
     }
   };
 
-  // Category data
+  // Counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    assets.forEach((a) => {
-      counts[a["Asset Category"]] = (counts[a["Asset Category"]] || 0) + 1;
-    });
+    assets.forEach((a) => { counts[a["Asset Category"]] = (counts[a["Asset Category"]] || 0) + 1; });
     return counts;
   }, [assets]);
 
   const categoryNames = useMemo(() => Object.keys(categoryCounts).sort(), [categoryCounts]);
 
+  // Warranty counts
+  const { expiredCount, expiringCount } = useMemo(() => {
+    let expired = 0, expiring = 0;
+    assets.forEach((a) => {
+      const w = getWarrantyStatus(a["Warranty End Date"]);
+      if (w.status === "expired") expired++;
+      else if (w.status === "expiring") expiring++;
+    });
+    return { expiredCount: expired, expiringCount: expiring };
+  }, [assets]);
+
+  // Filtering pipeline
   const filteredAssets = useMemo(() => {
     let result = assets;
-    if (companyFilter) {
-      result = result.filter((a) => (a["Company"] || "Unknown") === companyFilter);
+
+    // Company filter
+    if (companyFilter) result = result.filter((a) => (a["Company"] || "Unknown") === companyFilter);
+
+    // Category filter
+    if (categoryFilter) result = result.filter((a) => a["Asset Category"] === categoryFilter);
+
+    // Special warranty filter
+    if (specialFilter === "expired") {
+      result = result.filter((a) => getWarrantyStatus(a["Warranty End Date"]).status === "expired");
+    } else if (specialFilter === "expiring") {
+      result = result.filter((a) => getWarrantyStatus(a["Warranty End Date"]).status === "expiring");
     }
-    if (categoryFilter) {
-      result = result.filter((a) => a["Asset Category"] === categoryFilter);
+
+    // Global search
+    if (globalSearch.trim()) {
+      const q = globalSearch.toLowerCase();
+      result = result.filter((a) =>
+        Object.values(a).some((v) => String(v).toLowerCase().includes(q))
+      );
     }
+
     return result;
-  }, [assets, categoryFilter, companyFilter]);
+  }, [assets, categoryFilter, companyFilter, specialFilter, globalSearch]);
 
   // Detail view
   if (selectedAsset) {
@@ -129,9 +151,7 @@ const Index = () => {
     );
   }
 
-  const nextSno = assets.length > 0
-    ? Math.max(...assets.map((a) => a["S.NO"])) + 1
-    : 1;
+  const nextSno = assets.length > 0 ? Math.max(...assets.map((a) => a["S.NO"])) + 1 : 1;
 
   return (
     <>
@@ -140,37 +160,29 @@ const Index = () => {
         <div className="max-w-[1400px] mx-auto space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                IT Asset Management
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Track and manage all company assets
-              </p>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">IT Asset Management</h1>
+              <p className="text-sm text-muted-foreground mt-1">Track and manage all company assets</p>
             </div>
             <LiveClock />
           </div>
 
           {loading ? (
-            <div className="text-center py-12 text-muted-foreground animate-pulse">
-              Loading assets...
-            </div>
+            <div className="text-center py-12 text-muted-foreground animate-pulse">Loading assets...</div>
           ) : (
             <>
-              <DashboardSummary
-                assets={assets}
-                companyFilter={companyFilter}
-                onCompanySelect={setCompanyFilter}
-              />
+              <DashboardSummary assets={assets} companyFilter={companyFilter} onCompanySelect={setCompanyFilter} />
 
-              {/* Category filter */}
               <CategoryFilter
                 categories={categoryNames}
                 counts={categoryCounts}
                 active={categoryFilter}
                 onSelect={setCategoryFilter}
+                expiredCount={expiredCount}
+                expiringCount={expiringCount}
+                specialFilter={specialFilter}
+                onSpecialFilter={setSpecialFilter}
               />
 
-              {/* Admin-only: Import & Add actions */}
               {isAdmin && (
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-3 flex-wrap">
@@ -181,22 +193,13 @@ const Index = () => {
                       allBrands={[...new Set(assets.map((a) => a["Brand"]).filter(Boolean))].sort()}
                     />
                   </div>
-                  <CsvUpload
-                    existingAssetIds={assets.map((a) => a["Asset ID"])}
-                    onImport={handleImport}
-                  />
+                  <CsvUpload existingAssetIds={assets.map((a) => a["Asset ID"])} onImport={handleImport} />
                 </div>
               )}
 
-              {/* Download Report */}
               {assets.length > 0 && (
                 <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1.5"
-                    onClick={() => generateAssetReport(filteredAssets)}
-                  >
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => generateAssetReport(filteredAssets)}>
                     <Download className="h-3.5 w-3.5" />
                     Download Report
                   </Button>
@@ -208,6 +211,8 @@ const Index = () => {
                 onViewAsset={setSelectedAsset}
                 onDeleteAssets={isAdmin ? handleDeleteAssets : undefined}
                 isAdmin={isAdmin}
+                globalSearch={globalSearch}
+                onGlobalSearchChange={setGlobalSearch}
               />
             </>
           )}
