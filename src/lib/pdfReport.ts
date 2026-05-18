@@ -1,8 +1,8 @@
-// pdfReport.ts — Generate a professional PDF report of assets with branding logo
+// pdfReport.ts — Multi-asset PDF report (company-specific logo when uniform, clean header)
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Asset, ASSET_FIELDS } from "@/types/asset";
-import { getSetting } from "@/lib/settingsService";
+import { getCompanyLogo } from "@/lib/settingsService";
 
 async function loadLogoAsBase64(url: string): Promise<string | null> {
   try {
@@ -23,25 +23,33 @@ export const generateAssetReport = async (assets: Asset[]) => {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const now = new Date();
   const dateStr = now.toLocaleString();
+  const pw = doc.internal.pageSize.getWidth();
 
-  // Try to add logo
-  const logoUrl = await getSetting("logo_url");
-  let logoData: string | null = null;
-  if (logoUrl) logoData = await loadLogoAsBase64(logoUrl);
+  // Only show a logo if all assets share the same company
+  const companies = Array.from(new Set(assets.map((a) => a["Company"]).filter(Boolean)));
+  const singleCompany = companies.length === 1 ? companies[0] : null;
+  const logoUrl = singleCompany ? await getCompanyLogo(singleCompany) : null;
+  const logoData = logoUrl ? await loadLogoAsBase64(logoUrl) : null;
 
   if (logoData) {
-    try { doc.addImage(logoData, "PNG", 10, 6, 16, 16); } catch {}
+    try { doc.addImage(logoData, "PNG", 10, 8, 18, 18); } catch {}
   }
 
-  const textLeft = logoData ? 30 : 14;
-  doc.setFontSize(18);
+  const textLeft = logoData ? 32 : 14;
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("ITAM Report", textLeft, 18);
+  doc.setTextColor(20);
+  doc.text(singleCompany || "ITAM Report", textLeft, 16);
+
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(100);
-  doc.text(`Generated: ${dateStr}`, textLeft, 24);
-  doc.text(`Total Assets: ${assets.length}`, textLeft, 29);
+  doc.setTextColor(110);
+  doc.text(`Generated: ${dateStr}`, textLeft, 22);
+  doc.text(`Total Assets: ${assets.length}`, textLeft, 27);
+
+  doc.setDrawColor(220);
+  doc.setLineWidth(0.3);
+  doc.line(10, 32, pw - 10, 32);
   doc.setTextColor(0);
 
   const headers = ASSET_FIELDS.filter((f) => f !== "S.NO");
@@ -51,22 +59,22 @@ export const generateAssetReport = async (assets: Asset[]) => {
   );
 
   autoTable(doc, {
-    startY: 34,
+    startY: 36,
     head: [headRow],
     body: bodyRows,
     styles: { fontSize: 6, cellPadding: 1.5 },
-    headStyles: { fillColor: [59, 130, 246], textColor: 255, fontSize: 6.5, fontStyle: "bold" },
-    alternateRowStyles: { fillColor: [245, 247, 250] },
+    headStyles: { fillColor: [240, 244, 250], textColor: 40, fontSize: 6.5, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [249, 250, 252] },
     margin: { left: 8, right: 8 },
     didDrawPage: () => {
-      const pageHeight = doc.internal.pageSize.getHeight();
+      const ph = doc.internal.pageSize.getHeight();
       doc.setFontSize(7);
       doc.setTextColor(140);
-      doc.text("This is a system generated report", 14, pageHeight - 8);
+      doc.text("This is a system generated report", 14, ph - 8);
       doc.text(
         `Page ${doc.getCurrentPageInfo().pageNumber}`,
         doc.internal.pageSize.getWidth() - 25,
-        pageHeight - 8
+        ph - 8
       );
     },
   });

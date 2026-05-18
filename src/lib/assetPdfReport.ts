@@ -1,8 +1,8 @@
-// assetPdfReport.ts — Generate a professional PDF report for a single asset with branding logo
+// assetPdfReport.ts — Single-asset PDF report (company-specific logo, clean header)
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Asset, ASSET_FIELDS } from "@/types/asset";
-import { getSetting } from "@/lib/settingsService";
+import { getCompanyLogo } from "@/lib/settingsService";
 
 async function loadLogoAsBase64(url: string): Promise<string | null> {
   try {
@@ -26,30 +26,34 @@ export const generateSingleAssetReport = async (asset: Asset) => {
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
 
-  // Header bar
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, pw, 28, "F");
+  // Clean header (no colored background)
+  const company = asset["Company"] || "";
+  const logoUrl = await getCompanyLogo(company);
+  const logoData = logoUrl ? await loadLogoAsBase64(logoUrl) : null;
 
-  // Try to add logo
-  const logoUrl = await getSetting("logo_url");
-  if (logoUrl) {
-    const logoData = await loadLogoAsBase64(logoUrl);
-    if (logoData) {
-      try { doc.addImage(logoData, "PNG", 10, 4, 20, 20); } catch {}
-    }
+  if (logoData) {
+    try { doc.addImage(logoData, "PNG", 14, 10, 22, 22); } catch {}
   }
 
-  const textLeft = logoUrl ? 34 : 14;
-  doc.setFontSize(16);
+  const textLeft = logoData ? 40 : 14;
+  doc.setFontSize(15);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(255);
-  doc.text(asset["Company"] || "ITAM", textLeft, 14);
+  doc.setTextColor(20);
+  doc.text(company || "ITAM", textLeft, 18);
+
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("Asset Detail Report", textLeft, 21);
+  doc.setTextColor(110);
+  doc.text("Asset Detail Report", textLeft, 24);
+
   doc.setFontSize(8);
-  doc.text(`Generated: ${dateStr}`, pw - 14, 14, { align: "right" });
-  doc.text(`Asset ID: ${asset["Asset ID"]}`, pw - 14, 21, { align: "right" });
+  doc.text(`Generated: ${dateStr}`, pw - 14, 18, { align: "right" });
+  doc.text(`Asset ID: ${asset["Asset ID"]}`, pw - 14, 24, { align: "right" });
+
+  // Divider
+  doc.setDrawColor(220);
+  doc.setLineWidth(0.3);
+  doc.line(14, 36, pw - 14, 36);
 
   doc.setTextColor(0);
 
@@ -57,13 +61,13 @@ export const generateSingleAssetReport = async (asset: Asset) => {
   const bodyRows = fields.map((f) => [f, String(asset[f] ?? "N/A")]);
 
   autoTable(doc, {
-    startY: 36,
+    startY: 42,
     head: [["Field", "Value"]],
     body: bodyRows,
     styles: { fontSize: 9, cellPadding: 3 },
-    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontSize: 9.5, fontStyle: "bold" },
-    alternateRowStyles: { fillColor: [241, 245, 249] },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 } },
+    headStyles: { fillColor: [240, 244, 250], textColor: 40, fontSize: 9.5, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [249, 250, 252] },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 55, textColor: 60 } },
     margin: { left: 14, right: 14 },
   });
 
