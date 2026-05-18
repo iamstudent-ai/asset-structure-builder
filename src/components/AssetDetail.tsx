@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import CategoryBadge from "@/components/CategoryBadge";
 import WarrantyBadge from "@/components/WarrantyBadge";
 import QrCodeDialog from "@/components/QrCodeDialog";
-import { Button as Btn } from "@/components/ui/button";
 import { QrCode } from "lucide-react";
 
 interface AssetDetailProps {
