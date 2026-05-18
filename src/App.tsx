@@ -8,6 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Settings from "./pages/Settings.tsx";
+import AssetView from "./pages/AssetView.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,14 @@ const App = () => (
               element={
                 <AuthGuard>
                   <Settings />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/asset/:id"
+              element={
+                <AuthGuard>
+                  <AssetView />
                 </AuthGuard>
               }
             />
