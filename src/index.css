@@ -106,3 +106,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print: only show QR sheet on print */
+@media print {
+  @page { size: A4; margin: 8mm; }
+  body * { visibility: hidden !important; }
+  .qr-print-sheet, .qr-print-sheet * { visibility: visible !important; }
+  .qr-print-sheet {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    background: #fff !important;
+  }
+}
