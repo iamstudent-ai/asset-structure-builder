@@ -14,9 +14,11 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Search, Eye, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Search, Eye, ChevronLeft, ChevronRight, Trash2, Printer } from "lucide-react";
 import CategoryBadge from "@/components/CategoryBadge";
 import WarrantyBadge from "@/components/WarrantyBadge";
+import QrCodeDialog from "@/components/QrCodeDialog";
+import BulkQrPrint from "@/components/BulkQrPrint";
 
 const ROWS_PER_PAGE = 10;
 
@@ -105,6 +107,18 @@ const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin, globalSearch
         <span className="text-sm text-muted-foreground">
           {assets.length} asset{assets.length !== 1 ? "s" : ""}
         </span>
+
+        {selected.size > 0 && (
+          <BulkQrPrint
+            assets={assets.filter((a) => selected.has(a["Asset ID"]))}
+            trigger={
+              <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                <Printer className="h-3.5 w-3.5" />
+                Print QR Labels ({selected.size})
+              </Button>
+            }
+          />
+        )}
 
         {isAdmin && selected.size > 0 && (
           <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -224,6 +238,7 @@ const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin, globalSearch
                           <Eye className="h-3.5 w-3.5 mr-1" />
                           View
                         </Button>
+                        <QrCodeDialog asset={asset} />
                         {isAdmin && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>

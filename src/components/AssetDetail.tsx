@@ -11,6 +11,8 @@ import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import CategoryBadge from "@/components/CategoryBadge";
 import WarrantyBadge from "@/components/WarrantyBadge";
+import QrCodeDialog from "@/components/QrCodeDialog";
+import { QrCode } from "lucide-react";
 
 interface AssetDetailProps {
   asset: Asset;
@@ -133,6 +135,14 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false }: AssetDetailPro
           <Button variant="outline" size="sm" onClick={() => generateSingleAssetReport(asset)} className="h-8 shadow-sm">
             <FileDown className="h-4 w-4 mr-1" /> Download PDF
           </Button>
+          <QrCodeDialog
+            asset={asset}
+            trigger={
+              <Button variant="outline" size="sm" className="h-8 shadow-sm">
+                <QrCode className="h-4 w-4 mr-1" /> QR Code
+              </Button>
+            }
+          />
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-foreground">{asset["Asset ID"]}</span>
             <CategoryBadge category={asset["Asset Category"]} />
