@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import CategoryBadge from "@/components/CategoryBadge";
 import WarrantyBadge from "@/components/WarrantyBadge";
 import QrCodeDialog from "@/components/QrCodeDialog";
+import AssetHistory from "@/components/AssetHistory";
 import { QrCode } from "lucide-react";
 
 interface AssetDetailProps {
@@ -194,6 +195,8 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false }: AssetDetailPro
         {warrantyField("Warranty End Date")}
         {f("Lifecycle Status")}
       </Section>
+
+      <AssetHistory assetId={asset["Asset ID"]} readOnly={readOnly} />
     </div>
   );
 };
