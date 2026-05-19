@@ -3,6 +3,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Asset, ASSET_FIELDS } from "@/types/asset";
 import { getCompanyLogo } from "@/lib/settingsService";
+import { fetchHistoryForAsset, formatHistoryDate } from "@/lib/assetHistoryService";
 
 async function loadLogoAsBase64(url: string): Promise<string | null> {
   try {
@@ -71,10 +72,50 @@ export const generateSingleAssetReport = async (asset: Asset) => {
     margin: { left: 14, right: 14 },
   });
 
-  doc.setFontSize(7);
-  doc.setTextColor(140);
-  doc.text("This is a system generated report", 14, ph - 8);
-  doc.text("Page 1", pw - 25, ph - 8);
+  // Asset History section
+  try {
+    const history = await fetchHistoryForAsset(asset["Asset ID"]);
+    if (history.length > 0) {
+      const finalY = (doc as any).lastAutoTable?.finalY || 42;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(40);
+      doc.text("Asset History", 14, finalY + 8);
+
+      autoTable(doc, {
+        startY: finalY + 11,
+        head: [["Date", "Activity", "Description", "Cost", "Vendor", "By"]],
+        body: history.map((h) => [
+          formatHistoryDate(h.activity_date),
+          h.activity_type,
+          h.description || "-",
+          h.cost != null ? String(h.cost) : "-",
+          h.vendor || "-",
+          h.updated_by || "-",
+        ]),
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [240, 244, 250], textColor: 40, fontSize: 8.5, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [249, 250, 252] },
+        columnStyles: {
+          0: { cellWidth: 32 },
+          1: { cellWidth: 24 },
+          3: { cellWidth: 16, halign: "right" },
+          4: { cellWidth: 24 },
+          5: { cellWidth: 22 },
+        },
+        margin: { left: 14, right: 14 },
+      });
+    }
+  } catch {}
+
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(140);
+    doc.text("This is a system generated report", 14, ph - 8);
+    doc.text(`Page ${i} of ${pageCount}`, pw - 25, ph - 8);
+  }
 
   doc.save(`Asset_${asset["Asset ID"]}_${now.toISOString().slice(0, 10)}.pdf`);
 };
