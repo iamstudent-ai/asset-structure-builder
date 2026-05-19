@@ -38,6 +38,45 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_history: {
+        Row: {
+          activity_date: string
+          activity_type: string
+          asset_id: string
+          cost: number | null
+          created_at: string
+          description: string
+          id: string
+          updated_at: string
+          updated_by: string
+          vendor: string | null
+        }
+        Insert: {
+          activity_date?: string
+          activity_type: string
+          asset_id: string
+          cost?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string
+          vendor?: string | null
+        }
+        Update: {
+          activity_date?: string
+          activity_type?: string
+          asset_id?: string
+          cost?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       assets: {
         Row: {
           asset_category: string
