@@ -8,6 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Settings from "./pages/Settings.tsx";
+import Users from "./pages/Users.tsx";
 import AssetView from "./pages/AssetView.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
