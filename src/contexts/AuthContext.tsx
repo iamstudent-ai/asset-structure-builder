@@ -61,32 +61,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        setSession(newSession);
-        if (newSession?.user) {
-          // Use setTimeout to avoid Supabase client deadlock
-          setTimeout(async () => {
-            const profile = await fetchUserProfile(newSession.user.id);
-            setUser(profile);
-            setLoading(false);
-          }, 0);
-        } else {
-          setUser(null);
-          setLoading(false);
+    const handleProfile = async (sess: Session) => {
+      const { user: profile, disabled } = await fetchUserProfile(sess.user.id);
+      if (disabled) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setSession(null);
+        setLoading(false);
+        if (typeof window !== "undefined") {
+          import("@/hooks/use-toast").then(({ toast }) => {
+            toast({
+              title: "Account disabled",
+              description: "Your account has been disabled. Contact an administrator.",
+              variant: "destructive",
+            });
+          });
         }
+        return;
       }
-    );
+      setUser(profile);
+      setLoading(false);
+    };
 
-    // THEN check existing session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user) {
+        setTimeout(() => { handleProfile(newSession); }, 0);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
       setSession(existingSession);
       if (existingSession?.user) {
-        fetchUserProfile(existingSession.user.id).then((profile) => {
-          setUser(profile);
-          setLoading(false);
-        });
+        handleProfile(existingSession);
       } else {
         setLoading(false);
       }
