@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Monitor, Shield, User, Settings } from "lucide-react";
+import { LogOut, Monitor, Shield, User, Settings, Users as UsersIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
