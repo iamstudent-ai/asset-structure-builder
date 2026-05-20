@@ -55,14 +55,6 @@ const App = () => (
                 </AuthGuard>
               }
             />
-            <Route
-              path="/asset/:id"
-              element={
-                <AuthGuard>
-                  <AssetView />
-                </AuthGuard>
-              }
-            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
