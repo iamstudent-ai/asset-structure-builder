@@ -29,10 +29,10 @@ export const useAuth = () => {
   return ctx;
 };
 
-async function fetchUserProfile(userId: string): Promise<AuthUser | null> {
+async function fetchUserProfile(userId: string): Promise<{ user: AuthUser | null; disabled: boolean }> {
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, email")
+    .select("display_name, email, disabled")
     .eq("user_id", userId)
     .single();
 
@@ -40,15 +40,18 @@ async function fetchUserProfile(userId: string): Promise<AuthUser | null> {
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
-  if (!profile) return null;
+  if (!profile) return { user: null, disabled: false };
 
   return {
-    id: userId,
-    email: profile.email || "",
-    displayName: profile.display_name || profile.email?.split("@")[0] || "User",
-    role: (roleData?.role as AppRole) || "user",
+    user: {
+      id: userId,
+      email: profile.email || "",
+      displayName: profile.display_name || profile.email?.split("@")[0] || "User",
+      role: (roleData?.role as AppRole) || "user",
+    },
+    disabled: !!(profile as any).disabled,
   };
 }
 
