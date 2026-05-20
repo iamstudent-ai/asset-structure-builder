@@ -40,6 +40,22 @@ const App = () => (
               }
             />
             <Route
+              path="/users"
+              element={
+                <AuthGuard>
+                  <Users />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/asset/:id"
+              element={
+                <AuthGuard>
+                  <AssetView />
+                </AuthGuard>
+              }
+            />
+            <Route
               path="/asset/:id"
               element={
                 <AuthGuard>
