@@ -11,7 +11,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { History, Plus, Trash2, Wrench } from "lucide-react";
+import { History, Pencil, Plus, Trash2, Wrench, X, Save } from "lucide-react";
 import {
   ACTIVITY_TYPES,
   AssetHistoryEntry,
@@ -19,6 +19,7 @@ import {
   deleteHistoryEntry,
   fetchHistoryForAsset,
   formatHistoryDate,
+  updateHistoryEntry,
 } from "@/lib/assetHistoryService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,8 @@ const AssetHistory = ({ assetId, readOnly = false }: Props) => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ activity_type: "", description: "", cost: "", vendor: "" });
 
   const [form, setForm] = useState({
     activity_type: "Repair",
@@ -54,7 +57,10 @@ const AssetHistory = ({ assetId, readOnly = false }: Props) => {
     vendor: "",
   });
 
-  const canEdit = !readOnly && isAdmin;
+  // Any authenticated user can add/edit; only admins can delete.
+  const canEdit = !readOnly && !!user;
+  const canDelete = !readOnly && isAdmin;
+  const actorName = user?.displayName || user?.email || "Unknown";
 
   const load = async () => {
     try {
@@ -83,7 +89,7 @@ const AssetHistory = ({ assetId, readOnly = false }: Props) => {
         description: form.description.trim(),
         cost: form.cost ? Number(form.cost) : null,
         vendor: form.vendor.trim() || null,
-        updated_by: user?.displayName || user?.email || "Unknown",
+        updated_by: actorName,
       });
       toast({ title: "Entry added", description: "History updated." });
       setForm({ activity_type: "Repair", description: "", cost: "", vendor: "" });
@@ -93,6 +99,44 @@ const AssetHistory = ({ assetId, readOnly = false }: Props) => {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const startEdit = (e: AssetHistoryEntry) => {
+    setEditingId(e.id);
+    setEditForm({
+      activity_type: e.activity_type,
+      description: e.description,
+      cost: e.cost != null ? String(e.cost) : "",
+      vendor: e.vendor ?? "",
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!editForm.description.trim()) {
+      toast({ title: "Description required", variant: "destructive" });
+      return;
+    }
+    try {
+      const updated = await updateHistoryEntry(
+        id,
+        {
+          activity_type: editForm.activity_type,
+          description: editForm.description.trim(),
+          cost: editForm.cost ? Number(editForm.cost) : null,
+          vendor: editForm.vendor.trim() || null,
+        },
+        actorName,
+      );
+      setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      setEditingId(null);
+      toast({ title: "Entry updated" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
     }
   };
 
@@ -181,28 +225,87 @@ const AssetHistory = ({ assetId, readOnly = false }: Props) => {
           </div>
         ) : (
           <ol className="relative border-l border-border ml-2 space-y-3">
-            {entries.map((e) => (
-              <li key={e.id} className="ml-4 pl-1">
-                <span className="absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full bg-primary border-2 border-background" />
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${typeColor[e.activity_type] || typeColor["Other Activity"]}`}>
-                    {e.activity_type}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{formatHistoryDate(e.activity_date)}</span>
-                  {canEdit && (
-                    <Button size="icon" variant="ghost" className="h-6 w-6 ml-auto" onClick={() => handleDelete(e.id)}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
+            {entries.map((e) => {
+              const isEditing = editingId === e.id;
+              return (
+                <li key={e.id} className="ml-4 pl-1">
+                  <span className="absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full bg-primary border-2 border-background" />
+                  {isEditing ? (
+                    <div className="space-y-2 bg-muted/40 p-2 rounded-md">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select value={editForm.activity_type} onValueChange={(v) => setEditForm({ ...editForm, activity_type: v })}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {ACTIVITY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          value={editForm.vendor}
+                          onChange={(ev) => setEditForm({ ...editForm, vendor: ev.target.value })}
+                          placeholder="Vendor"
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                      <Textarea
+                        rows={2}
+                        value={editForm.description}
+                        onChange={(ev) => setEditForm({ ...editForm, description: ev.target.value })}
+                        className="text-xs"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={editForm.cost}
+                          onChange={(ev) => setEditForm({ ...editForm, cost: ev.target.value })}
+                          placeholder="Cost"
+                          className="h-8 text-xs w-32"
+                        />
+                        <div className="ml-auto flex gap-1">
+                          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={cancelEdit}>
+                            <X className="h-3.5 w-3.5 mr-1" /> Cancel
+                          </Button>
+                          <Button size="sm" className="h-7 px-2" onClick={() => saveEdit(e.id)}>
+                            <Save className="h-3.5 w-3.5 mr-1" /> Save
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${typeColor[e.activity_type] || typeColor["Other Activity"]}`}>
+                          {e.activity_type}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{formatHistoryDate(e.activity_date)}</span>
+                        {canEdit && (
+                          <div className="ml-auto flex items-center gap-0.5">
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => startEdit(e)} title="Edit">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            {canDelete && (
+                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(e.id)} title="Delete">
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-foreground break-words">{e.description}</p>
+                      <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                        {e.cost != null && <span>Cost: <strong className="text-foreground">{e.cost}</strong></span>}
+                        {e.vendor && <span>Vendor: <strong className="text-foreground">{e.vendor}</strong></span>}
+                        {e.updated_by && <span>By: <strong className="text-foreground">{e.updated_by}</strong></span>}
+                      </div>
+                      {e.last_modified_at && (
+                        <div className="text-[11px] text-muted-foreground/80 mt-0.5 italic">
+                          Edited by {e.last_modified_by || "Unknown"} on {formatHistoryDate(e.last_modified_at)}
+                        </div>
+                      )}
+                    </>
                   )}
-                </div>
-                <p className="text-sm text-foreground break-words">{e.description}</p>
-                <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-                  {e.cost != null && <span>Cost: <strong className="text-foreground">{e.cost}</strong></span>}
-                  {e.vendor && <span>Vendor: <strong className="text-foreground">{e.vendor}</strong></span>}
-                  {e.updated_by && <span>By: <strong className="text-foreground">{e.updated_by}</strong></span>}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ol>
         )}
       </CardContent>

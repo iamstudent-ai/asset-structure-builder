@@ -23,6 +23,8 @@ export interface AssetHistoryEntry {
   vendor: string | null;
   updated_by: string;
   activity_date: string;
+  last_modified_by?: string | null;
+  last_modified_at?: string | null;
 }
 
 export interface NewHistoryEntry {
@@ -53,6 +55,25 @@ export async function addHistoryEntry(entry: NewHistoryEntry): Promise<AssetHist
   const { data, error } = await supabase
     .from("asset_history")
     .insert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as AssetHistoryEntry;
+}
+
+export async function updateHistoryEntry(
+  id: string,
+  patch: Partial<Pick<AssetHistoryEntry, "activity_type" | "description" | "cost" | "vendor">>,
+  modifiedBy: string,
+): Promise<AssetHistoryEntry> {
+  const { data, error } = await supabase
+    .from("asset_history")
+    .update({
+      ...patch,
+      last_modified_by: modifiedBy,
+      last_modified_at: new Date().toISOString(),
+    })
+    .eq("id", id)
     .select()
     .single();
   if (error) throw error;

@@ -47,6 +47,8 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          last_modified_at: string | null
+          last_modified_by: string | null
           updated_at: string
           updated_by: string
           vendor: string | null
@@ -59,6 +61,8 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          last_modified_at?: string | null
+          last_modified_by?: string | null
           updated_at?: string
           updated_by?: string
           vendor?: string | null
@@ -71,6 +75,8 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          last_modified_at?: string | null
+          last_modified_by?: string | null
           updated_at?: string
           updated_by?: string
           vendor?: string | null
@@ -152,6 +158,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          disabled: boolean
           display_name: string | null
           email: string | null
           id: string
@@ -160,6 +167,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          disabled?: boolean
           display_name?: string | null
           email?: string | null
           id?: string
@@ -168,6 +176,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          disabled?: boolean
           display_name?: string | null
           email?: string | null
           id?: string

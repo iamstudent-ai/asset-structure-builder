@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Monitor, Shield, User, Settings } from "lucide-react";
+import { LogOut, Monitor, Shield, User, Settings, Users as UsersIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
@@ -22,15 +22,26 @@ const Navbar = () => {
 
         <div className="flex items-center gap-3">
           {isAdmin && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/settings")}
-              className="h-8 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Settings className="h-3.5 w-3.5 mr-1" />
-              Settings
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/users")}
+                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <UsersIcon className="h-3.5 w-3.5 mr-1" />
+                Users
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/settings")}
+                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="h-3.5 w-3.5 mr-1" />
+                Settings
+              </Button>
+            </>
           )}
           <div className="flex items-center gap-2">
             {isAdmin ? (
