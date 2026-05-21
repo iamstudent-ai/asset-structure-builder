@@ -281,6 +281,9 @@ const Users = () => {
                                 <UserX className="h-3.5 w-3.5 mr-1" /> Disable
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" className="h-8" disabled={busyId === r.id} onClick={() => { setResetUser(r); setNewPassword(""); }} title="Reset password">
+                              <KeyRound className="h-3.5 w-3.5 mr-1" /> Reset
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
