@@ -47,6 +47,9 @@ const Users = () => {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [form, setForm] = useState({ display_name: "", email: "", password: "", role: "user" as "user" | "admin" });
   const [creating, setCreating] = useState(false);
+  const [resetUser, setResetUser] = useState<AdminUserRow | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   const call = async (action: string, payload: Record<string, unknown> = {}) => {
     const { data, error } = await supabase.functions.invoke("admin-users", {
