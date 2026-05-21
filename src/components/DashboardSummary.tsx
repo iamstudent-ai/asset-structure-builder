@@ -1,7 +1,6 @@
 import { Asset } from "@/types/asset";
 import { Card, CardContent } from "@/components/ui/card";
-import { Monitor, HardDrive, Server, Laptop, Building2 } from "lucide-react";
-import { getCategoryStyle } from "@/lib/categoryColors";
+import { HardDrive, Building2 } from "lucide-react";
 
 interface DashboardSummaryProps {
   assets: Asset[];
@@ -12,12 +11,6 @@ interface DashboardSummaryProps {
 const DashboardSummary = ({ assets, companyFilter, onCompanySelect }: DashboardSummaryProps) => {
   const total = assets.length;
 
-  // Category counts
-  const categories: Record<string, number> = {};
-  assets.forEach((a) => {
-    categories[a["Asset Category"]] = (categories[a["Asset Category"]] || 0) + 1;
-  });
-
   // Company counts
   const companies: Record<string, number> = {};
   assets.forEach((a) => {
@@ -25,70 +18,54 @@ const DashboardSummary = ({ assets, companyFilter, onCompanySelect }: DashboardS
     companies[company] = (companies[company] || 0) + 1;
   });
 
-  const icons: Record<string, React.ReactNode> = {
-    Laptop: <Laptop className="h-5 w-5" />,
-    Desktop: <Monitor className="h-5 w-5" />,
-    Server: <Server className="h-5 w-5" />,
-    Monitor: <Monitor className="h-5 w-5" />,
-  };
-
   return (
-    <div className="space-y-4">
-      {/* Top summary row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="pt-4 pb-3 flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
-              <HardDrive className="h-5 w-5" />
+    <div className="space-y-5">
+      {/* Total Assets hero card */}
+      <Card className="shadow-md hover:shadow-lg transition-shadow rounded-2xl border-0 bg-gradient-to-br from-primary/10 via-card to-accent/10">
+        <CardContent className="py-5 px-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/15 text-primary">
+              <HardDrive className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{total}</p>
-              <p className="text-xs text-muted-foreground">Total Assets</p>
+              <p className="text-3xl md:text-4xl font-bold text-foreground leading-none">{total}</p>
+              <p className="text-xs text-muted-foreground mt-1.5">Total Assets</p>
             </div>
-          </CardContent>
-        </Card>
-        {Object.entries(categories).slice(0, 3).map(([cat, count]) => {
-          const style = getCategoryStyle(cat);
-          return (
-            <Card key={cat} className="shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="pt-4 pb-3 flex items-center gap-3">
-                <div className={`p-2.5 rounded-lg ${style.bg} ${style.icon}`}>
-                  {icons[cat] || <HardDrive className="h-5 w-5" />}
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{count}</p>
-                  <p className="text-xs text-muted-foreground">{cat}s</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            Online
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Company filter cards */}
       {Object.keys(companies).length > 0 && (
         <div>
           <p className="text-xs font-medium text-muted-foreground mb-2">Filter by Company</p>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x scrollbar-thin">
             <button
               onClick={() => onCompanySelect(null)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              className={`shrink-0 snap-start inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium border transition-all ${
                 companyFilter === null
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:shadow-sm"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                  : "bg-card text-muted-foreground border-border hover:border-emerald-400/60 hover:text-foreground hover:shadow-sm"
               }`}
             >
-              <Building2 className="h-3 w-3" />
+              <Building2 className="h-3.5 w-3.5" />
               All Companies
             </button>
             {Object.entries(companies).sort().map(([company, count]) => (
               <button
                 key={company}
                 onClick={() => onCompanySelect(companyFilter === company ? null : company)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                className={`shrink-0 snap-start inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium border transition-all ${
                   companyFilter === company
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:shadow-sm"
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                    : "bg-card text-muted-foreground border-border hover:border-emerald-400/60 hover:text-foreground hover:shadow-sm"
                 }`}
               >
                 {company} ({count})
