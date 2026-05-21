@@ -139,6 +139,25 @@ const Users = () => {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!resetUser) return;
+    if (newPassword.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setResetting(true);
+    try {
+      await call("reset_password", { user_id: resetUser.id, password: newPassword });
+      toast({ title: "Password reset", description: `New password set for ${resetUser.email}` });
+      setResetUser(null);
+      setNewPassword("");
+    } catch (e: any) {
+      toast({ title: "Reset failed", description: e.message, variant: "destructive" });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
