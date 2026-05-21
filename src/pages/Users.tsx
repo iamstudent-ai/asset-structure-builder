@@ -19,7 +19,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Shield, ShieldOff, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
+import { KeyRound, Plus, Search, Shield, ShieldOff, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
 
 interface AdminUserRow {
   id: string;
