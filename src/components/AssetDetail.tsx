@@ -196,7 +196,8 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false }: AssetDetailPro
         {f("Lifecycle Status")}
       </Section>
 
-      <AssetHistory assetId={asset["Asset ID"]} readOnly={readOnly} />
+      {/* Asset History is editable by all authenticated users regardless of asset edit permission */}
+      <AssetHistory assetId={asset["Asset ID"]} />
     </div>
   );
 };

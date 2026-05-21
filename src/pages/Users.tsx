@@ -19,7 +19,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Shield, ShieldOff, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
+import { KeyRound, Plus, Search, Shield, ShieldOff, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
 
 interface AdminUserRow {
   id: string;
@@ -47,6 +47,9 @@ const Users = () => {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [form, setForm] = useState({ display_name: "", email: "", password: "", role: "user" as "user" | "admin" });
   const [creating, setCreating] = useState(false);
+  const [resetUser, setResetUser] = useState<AdminUserRow | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   const call = async (action: string, payload: Record<string, unknown> = {}) => {
     const { data, error } = await supabase.functions.invoke("admin-users", {
@@ -133,6 +136,25 @@ const Users = () => {
       toast({ title: "Failed", description: e.message, variant: "destructive" });
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetUser) return;
+    if (newPassword.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setResetting(true);
+    try {
+      await call("reset_password", { user_id: resetUser.id, password: newPassword });
+      toast({ title: "Password reset", description: `New password set for ${resetUser.email}` });
+      setResetUser(null);
+      setNewPassword("");
+    } catch (e: any) {
+      toast({ title: "Reset failed", description: e.message, variant: "destructive" });
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -259,6 +281,9 @@ const Users = () => {
                                 <UserX className="h-3.5 w-3.5 mr-1" /> Disable
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" className="h-8" disabled={busyId === r.id} onClick={() => { setResetUser(r); setNewPassword(""); }} title="Reset password">
+                              <KeyRound className="h-3.5 w-3.5 mr-1" /> Reset
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -269,6 +294,32 @@ const Users = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Dialog open={!!resetUser} onOpenChange={(o) => { if (!o) { setResetUser(null); setNewPassword(""); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Reset Password</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Set a new password for <strong className="text-foreground">{resetUser?.email}</strong>. The user will need to sign in again with this password.
+              </p>
+              <div>
+                <Label className="text-xs">New Password *</Label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="h-9"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setResetUser(null); setNewPassword(""); }}>Cancel</Button>
+              <Button onClick={handleResetPassword} disabled={resetting}>{resetting ? "Saving..." : "Reset Password"}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
