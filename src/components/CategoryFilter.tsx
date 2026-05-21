@@ -19,11 +19,15 @@ const CategoryFilter = ({
   specialFilter, onSpecialFilter,
 }: CategoryFilterProps) => {
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x scrollbar-thin md:flex-wrap md:overflow-visible">
       <Button
-        variant={active === null && !specialFilter ? "default" : "outline"}
+        variant="outline"
         size="sm"
-        className={`h-8 text-xs ${active === null && !specialFilter ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
+        className={`shrink-0 h-8 text-xs rounded-full px-3.5 ${
+          active === null && !specialFilter
+            ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+            : "hover:border-emerald-400/60"
+        }`}
         onClick={() => { onSelect(null); onSpecialFilter?.(null); }}
       >
         All
@@ -36,10 +40,10 @@ const CategoryFilter = ({
             key={cat}
             variant="outline"
             size="sm"
-            className={`h-8 text-xs border transition-all ${
+            className={`shrink-0 h-8 text-xs rounded-full px-3.5 border transition-all ${
               isActive
-                ? `bg-green-600 text-white border-green-600 shadow-sm hover:bg-green-700`
-                : "hover:shadow-sm"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-sm hover:bg-emerald-700"
+                : `${style.bg} ${style.text} ${style.border} hover:shadow-sm hover:brightness-95`
             }`}
             onClick={() => { onSelect(isActive ? null : cat); onSpecialFilter?.(null); }}
           >
@@ -53,10 +57,10 @@ const CategoryFilter = ({
         <Button
           variant="outline"
           size="sm"
-          className={`h-8 text-xs gap-1 ${
+          className={`shrink-0 h-8 text-xs rounded-full px-3.5 gap-1 ${
             specialFilter === "expired"
               ? "bg-red-600 text-white border-red-600 hover:bg-red-700"
-              : "text-red-600 border-red-200 hover:bg-red-50"
+              : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
           }`}
           onClick={() => { onSelect(null); onSpecialFilter?.(specialFilter === "expired" ? null : "expired"); }}
         >
@@ -68,10 +72,10 @@ const CategoryFilter = ({
         <Button
           variant="outline"
           size="sm"
-          className={`h-8 text-xs gap-1 ${
+          className={`shrink-0 h-8 text-xs rounded-full px-3.5 gap-1 ${
             specialFilter === "expiring"
-              ? "bg-amber-600 text-white border-amber-600 hover:bg-amber-700"
-              : "text-amber-600 border-amber-200 hover:bg-amber-50"
+              ? "bg-amber-500 text-white border-amber-500 hover:bg-amber-600"
+              : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
           }`}
           onClick={() => { onSelect(null); onSpecialFilter?.(specialFilter === "expiring" ? null : "expiring"); }}
         >
