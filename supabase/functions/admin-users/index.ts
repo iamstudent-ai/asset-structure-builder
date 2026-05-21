@@ -126,6 +126,9 @@ Deno.serve(async (req) => {
       const { error: uerr } = await admin.auth.admin.updateUserById(user_id, { password });
       if (uerr) return json({ error: uerr.message }, 500);
       return json({ ok: true });
+    }
+
+
 
     return json({ error: "Unknown action" }, 400);
   } catch (e: any) {
