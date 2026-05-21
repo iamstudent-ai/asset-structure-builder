@@ -294,6 +294,32 @@ const Users = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Dialog open={!!resetUser} onOpenChange={(o) => { if (!o) { setResetUser(null); setNewPassword(""); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Reset Password</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Set a new password for <strong className="text-foreground">{resetUser?.email}</strong>. The user will need to sign in again with this password.
+              </p>
+              <div>
+                <Label className="text-xs">New Password *</Label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="h-9"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setResetUser(null); setNewPassword(""); }}>Cancel</Button>
+              <Button onClick={handleResetPassword} disabled={resetting}>{resetting ? "Saving..." : "Reset Password"}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
