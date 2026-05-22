@@ -184,7 +184,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
   const confirmImport = () => {
     if (!preview) return;
     onImport(preview);
-    toast.success(`${preview.length} record(s) added, ${skippedCount} skipped (invalid/duplicate Asset ID)`);
+    toast.success(`${preview.length} record(s) added`);
     reset();
   };
 
