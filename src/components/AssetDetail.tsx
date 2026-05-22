@@ -70,7 +70,7 @@ const Section = ({ title, icon, children }: { title: string; icon: React.ReactNo
   </Card>
 );
 
-const AssetDetail = ({ asset, onBack, onSave, readOnly = false }: AssetDetailProps) => {
+const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet }: AssetDetailProps) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Asset>({ ...asset });
   const [errors, setErrors] = useState<Partial<Record<keyof Asset, string>>>({});
