@@ -191,9 +191,12 @@ const Index = () => {
                 onSelect={setCategoryFilter}
                 expiredCount={expiredCount}
                 expiringCount={expiringCount}
+                duplicateCount={duplicateCount}
+                missingCount={missingCount}
                 specialFilter={specialFilter}
                 onSpecialFilter={setSpecialFilter}
               />
+
 
               {isAdmin && (
                 <div className="flex flex-col gap-4">
