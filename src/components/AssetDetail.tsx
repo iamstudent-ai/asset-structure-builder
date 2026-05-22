@@ -5,7 +5,7 @@ import { Asset, EDITABLE_FIELDS, REQUIRED_FIELDS } from "@/types/asset";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Info, Cpu, Users, MapPin, ShieldCheck, Pencil, Save, X, FileDown } from "lucide-react";
+import { ArrowLeft, Info, Cpu, Users, MapPin, ShieldCheck, Pencil, Save, X, FileDown, AlertTriangle } from "lucide-react";
 import { generateSingleAssetReport } from "@/lib/assetPdfReport";
 import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -14,12 +14,14 @@ import WarrantyBadge from "@/components/WarrantyBadge";
 import QrCodeDialog from "@/components/QrCodeDialog";
 import AssetHistory from "@/components/AssetHistory";
 import { QrCode } from "lucide-react";
+import { isMissingAssetId, isDuplicateAsset } from "@/lib/duplicateUtils";
 
 interface AssetDetailProps {
   asset: Asset;
   onBack: () => void;
   onSave?: (updated: Asset) => void;
   readOnly?: boolean;
+  duplicateSet?: Set<string>;
 }
 
 const formatDate = (dateStr: string) => {
@@ -68,7 +70,7 @@ const Section = ({ title, icon, children }: { title: string; icon: React.ReactNo
   </Card>
 );
 
-const AssetDetail = ({ asset, onBack, onSave, readOnly = false }: AssetDetailProps) => {
+const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet }: AssetDetailProps) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Asset>({ ...asset });
   const [errors, setErrors] = useState<Partial<Record<keyof Asset, string>>>({});
@@ -144,9 +146,21 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false }: AssetDetailPro
               </Button>
             }
           />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">{asset["Asset ID"]}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-foreground">
+              {isMissingAssetId(asset["Asset ID"]) ? "— (Missing Asset ID)" : asset["Asset ID"]}
+            </span>
             <CategoryBadge category={asset["Asset Category"]} />
+            {isMissingAssetId(asset["Asset ID"]) && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 text-xs font-medium">
+                <AlertTriangle className="h-3 w-3" /> Missing Asset ID
+              </span>
+            )}
+            {!isMissingAssetId(asset["Asset ID"]) && duplicateSet && isDuplicateAsset(asset, duplicateSet) && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 text-xs font-medium">
+                <AlertTriangle className="h-3 w-3" /> Duplicate Asset ID
+              </span>
+            )}
           </div>
         </div>
         {!readOnly && (

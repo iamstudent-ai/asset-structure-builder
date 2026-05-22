@@ -127,8 +127,13 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
 
       const reasons: string[] = [];
       const parsed: Asset[] = [];
-      const seenIds = new Set<string>(existingAssetIds.map((id) => id.toLowerCase()));
       let skipped = 0;
+      let missingCount = 0;
+      let dupCount = 0;
+      const seenInFile = new Set<string>();
+      const existingNorm = new Set<string>(
+        existingAssetIds.map((id) => id.trim().toLowerCase()).filter(Boolean)
+      );
 
       for (let i = 1; i < lines.length; i++) {
         const values = parseCsvLine(lines[i]);
@@ -136,34 +141,35 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
         for (const field of EXPECTED_HEADERS) {
           const idx = headerIndexMap[field];
           const val = (values[idx] ?? "").trim();
-          // Fill empty non-required fields with N/A
           row[field] = val === "" ? "N/A" : val;
         }
         row["S.NO"] = Number(row["S.NO"]) || i;
 
-        // Normalize category
         if (row["Asset Category"]) {
           row["Asset Category"] = normalizeCategory(row["Asset Category"]);
         }
 
-        // Skip if Asset ID is empty or N/A
-        const assetId = row["Asset ID"]?.trim();
-        if (!assetId || assetId.toLowerCase() === "n/a") {
-          skipped++;
-          reasons.push(`Row ${i + 1}: Empty/N/A Asset ID — skipped`);
-          continue;
-        }
+        // Allow empty Asset ID (mark missing) and duplicates (mark warning)
+        const rawId = (row["Asset ID"] ?? "").toString().trim();
+        const isMissing = !rawId || rawId.toUpperCase() === "N/A";
 
-        // Skip duplicate Asset ID
-        const idLower = assetId.toLowerCase();
-        if (seenIds.has(idLower)) {
-          skipped++;
-          reasons.push(`Row ${i + 1}: Duplicate Asset ID "${assetId}" — skipped`);
-          continue;
+        if (isMissing) {
+          // Unique placeholder so DB NOT NULL constraint is satisfied; UI treats MISSING- as missing
+          row["Asset ID"] = `MISSING-${Date.now()}-${i}`;
+          missingCount++;
+        } else {
+          row["Asset ID"] = rawId;
+          const norm = rawId.toLowerCase();
+          if (existingNorm.has(norm) || seenInFile.has(norm)) {
+            dupCount++;
+            reasons.push(`Row ${i + 1}: Duplicate Asset ID "${rawId}" — imported with warning`);
+          }
+          seenInFile.add(norm);
         }
-        seenIds.add(idLower);
         parsed.push(row as Asset);
       }
+      if (missingCount > 0) reasons.unshift(`${missingCount} row(s) imported as Missing Asset ID`);
+      if (dupCount > 0) reasons.unshift(`${dupCount} row(s) imported as Duplicate Asset ID`);
 
       setSkippedCount(skipped);
       setSkippedReasons(reasons);
@@ -178,7 +184,7 @@ const CsvUpload = ({ existingAssetIds, onImport }: CsvUploadProps) => {
   const confirmImport = () => {
     if (!preview) return;
     onImport(preview);
-    toast.success(`${preview.length} record(s) added, ${skippedCount} skipped (invalid/duplicate Asset ID)`);
+    toast.success(`${preview.length} record(s) added`);
     reset();
   };
 

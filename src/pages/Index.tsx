@@ -5,6 +5,7 @@ import { Asset } from "@/types/asset";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchAssets, addAsset, updateAsset, importAssets, deleteAsset } from "@/lib/assetService";
 import { getWarrantyStatus } from "@/lib/warrantyUtils";
+import { getDuplicateAssetIdSet, isMissingAssetId, isDuplicateAsset } from "@/lib/duplicateUtils";
 import AssetTable from "@/components/AssetTable";
 import AssetDetail from "@/components/AssetDetail";
 import DashboardSummary from "@/components/DashboardSummary";
@@ -93,15 +94,22 @@ const Index = () => {
 
   const categoryNames = useMemo(() => Object.keys(categoryCounts).sort(), [categoryCounts]);
 
-  // Warranty counts
-  const { expiredCount, expiringCount } = useMemo(() => {
+  // Warranty + duplicate/missing counts
+  const { expiredCount, expiringCount, duplicateSet, duplicateCount, missingCount } = useMemo(() => {
     let expired = 0, expiring = 0;
     assets.forEach((a) => {
       const w = getWarrantyStatus(a["Warranty End Date"]);
       if (w.status === "expired") expired++;
       else if (w.status === "expiring") expiring++;
     });
-    return { expiredCount: expired, expiringCount: expiring };
+    const dupSet = getDuplicateAssetIdSet(assets);
+    let dupCount = 0;
+    let missCount = 0;
+    assets.forEach((a) => {
+      if (isMissingAssetId(a["Asset ID"])) missCount++;
+      else if (isDuplicateAsset(a, dupSet)) dupCount++;
+    });
+    return { expiredCount: expired, expiringCount: expiring, duplicateSet: dupSet, duplicateCount: dupCount, missingCount: missCount };
   }, [assets]);
 
   // Filtering pipeline
@@ -119,6 +127,10 @@ const Index = () => {
       result = result.filter((a) => getWarrantyStatus(a["Warranty End Date"]).status === "expired");
     } else if (specialFilter === "expiring") {
       result = result.filter((a) => getWarrantyStatus(a["Warranty End Date"]).status === "expiring");
+    } else if (specialFilter === "duplicate") {
+      result = result.filter((a) => isDuplicateAsset(a, duplicateSet));
+    } else if (specialFilter === "missing") {
+      result = result.filter((a) => isMissingAssetId(a["Asset ID"]));
     }
 
     // Global search
@@ -130,7 +142,7 @@ const Index = () => {
     }
 
     return result;
-  }, [assets, categoryFilter, companyFilter, specialFilter, globalSearch]);
+  }, [assets, categoryFilter, companyFilter, specialFilter, globalSearch, duplicateSet]);
 
   // Detail view
   if (selectedAsset) {
@@ -144,6 +156,7 @@ const Index = () => {
               onBack={() => setSelectedAsset(null)}
               onSave={isAdmin ? handleSave : undefined}
               readOnly={!isAdmin}
+              duplicateSet={duplicateSet}
             />
           </div>
         </div>
@@ -179,9 +192,12 @@ const Index = () => {
                 onSelect={setCategoryFilter}
                 expiredCount={expiredCount}
                 expiringCount={expiringCount}
+                duplicateCount={duplicateCount}
+                missingCount={missingCount}
                 specialFilter={specialFilter}
                 onSpecialFilter={setSpecialFilter}
               />
+
 
               {isAdmin && (
                 <div className="flex flex-col gap-4">
@@ -213,6 +229,7 @@ const Index = () => {
                 isAdmin={isAdmin}
                 globalSearch={globalSearch}
                 onGlobalSearchChange={setGlobalSearch}
+                duplicateSet={duplicateSet}
               />
             </>
           )}
