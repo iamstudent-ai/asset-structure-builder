@@ -146,9 +146,21 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet }: 
               </Button>
             }
           />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">{asset["Asset ID"]}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-foreground">
+              {isMissingAssetId(asset["Asset ID"]) ? "— (Missing Asset ID)" : asset["Asset ID"]}
+            </span>
             <CategoryBadge category={asset["Asset Category"]} />
+            {isMissingAssetId(asset["Asset ID"]) && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 text-xs font-medium">
+                <AlertTriangle className="h-3 w-3" /> Missing Asset ID
+              </span>
+            )}
+            {!isMissingAssetId(asset["Asset ID"]) && duplicateSet && isDuplicateAsset(asset, duplicateSet) && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 text-xs font-medium">
+                <AlertTriangle className="h-3 w-3" /> Duplicate Asset ID
+              </span>
+            )}
           </div>
         </div>
         {!readOnly && (
