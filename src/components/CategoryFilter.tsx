@@ -86,6 +86,36 @@ const CategoryFilter = ({
           Expiring Soon ({expiringCount})
         </Button>
       )}
+      {duplicateCount > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className={`shrink-0 h-8 text-xs rounded-full px-3.5 gap-1 ${
+            specialFilter === "duplicate"
+              ? "bg-orange-600 text-white border-orange-600 hover:bg-orange-700"
+              : "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
+          }`}
+          onClick={() => { onSelect(null); onSpecialFilter?.(specialFilter === "duplicate" ? null : "duplicate"); }}
+        >
+          <Copy className="h-3 w-3" />
+          Duplicate ({duplicateCount})
+        </Button>
+      )}
+      {missingCount > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className={`shrink-0 h-8 text-xs rounded-full px-3.5 gap-1 ${
+            specialFilter === "missing"
+              ? "bg-rose-600 text-white border-rose-600 hover:bg-rose-700"
+              : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+          }`}
+          onClick={() => { onSelect(null); onSpecialFilter?.(specialFilter === "missing" ? null : "missing"); }}
+        >
+          <HelpCircle className="h-3 w-3" />
+          Missing ID ({missingCount})
+        </Button>
+      )}
     </div>
   );
 };
