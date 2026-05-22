@@ -127,6 +127,10 @@ const Index = () => {
       result = result.filter((a) => getWarrantyStatus(a["Warranty End Date"]).status === "expired");
     } else if (specialFilter === "expiring") {
       result = result.filter((a) => getWarrantyStatus(a["Warranty End Date"]).status === "expiring");
+    } else if (specialFilter === "duplicate") {
+      result = result.filter((a) => isDuplicateAsset(a, duplicateSet));
+    } else if (specialFilter === "missing") {
+      result = result.filter((a) => isMissingAssetId(a["Asset ID"]));
     }
 
     // Global search
