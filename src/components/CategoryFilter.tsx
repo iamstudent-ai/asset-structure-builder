@@ -1,6 +1,6 @@
 import { getCategoryStyle } from "@/lib/categoryColors";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, AlertCircle } from "lucide-react";
+import { AlertTriangle, AlertCircle, Copy, HelpCircle } from "lucide-react";
 
 interface CategoryFilterProps {
   categories: string[];
@@ -9,6 +9,8 @@ interface CategoryFilterProps {
   onSelect: (cat: string | null) => void;
   expiredCount?: number;
   expiringCount?: number;
+  duplicateCount?: number;
+  missingCount?: number;
   specialFilter?: string | null;
   onSpecialFilter?: (filter: string | null) => void;
 }
@@ -16,6 +18,7 @@ interface CategoryFilterProps {
 const CategoryFilter = ({
   categories, counts, active, onSelect,
   expiredCount = 0, expiringCount = 0,
+  duplicateCount = 0, missingCount = 0,
   specialFilter, onSpecialFilter,
 }: CategoryFilterProps) => {
   return (
