@@ -228,6 +228,7 @@ const Index = () => {
                 isAdmin={isAdmin}
                 globalSearch={globalSearch}
                 onGlobalSearchChange={setGlobalSearch}
+                duplicateSet={duplicateSet}
               />
             </>
           )}
