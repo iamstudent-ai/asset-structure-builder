@@ -191,12 +191,19 @@ const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin, globalSearch
             ) : (
               pageData.map((asset, idx) => {
                 const isSelected = selected.has(asset["Asset ID"]);
+                const missing = isMissingAssetId(asset["Asset ID"]);
+                const duplicate = !missing && duplicateSet ? isDuplicateAsset(asset, duplicateSet) : false;
+                const warnClass = missing
+                  ? "bg-rose-50/70 hover:bg-rose-100/70 border-l-2 border-l-rose-400"
+                  : duplicate
+                  ? "bg-orange-50/70 hover:bg-orange-100/70 border-l-2 border-l-orange-400"
+                  : "";
                 return (
                   <TableRow
-                    key={asset["Asset ID"]}
+                    key={`${asset["S.NO"]}-${asset["Asset ID"]}-${idx}`}
                     className={`cursor-pointer transition-colors hover:bg-primary/[0.04] ${
-                      idx % 2 === 1 ? "bg-muted/30" : ""
-                    } ${isSelected ? "bg-green-500/10 hover:bg-green-500/15 border-l-2 border-l-green-500" : ""}`}
+                      idx % 2 === 1 && !warnClass ? "bg-muted/30" : ""
+                    } ${warnClass} ${isSelected ? "bg-green-500/10 hover:bg-green-500/15 border-l-2 border-l-green-500" : ""}`}
                     onClick={() => onViewAsset?.(asset)}
                   >
                     {isAdmin && (
@@ -217,6 +224,22 @@ const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin, globalSearch
                       >
                         {field === "S.NO" ? (
                           (safePage - 1) * ROWS_PER_PAGE + idx + 1
+                        ) : field === "Asset ID" ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className={missing ? "italic text-rose-600" : ""}>
+                              {missing ? "—" : displayValue(asset[field])}
+                            </span>
+                            {missing && (
+                              <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 px-1.5 py-0.5 text-[10px] font-medium">
+                                <AlertTriangle className="h-2.5 w-2.5" /> Missing
+                              </span>
+                            )}
+                            {duplicate && (
+                              <span className="inline-flex items-center gap-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-1.5 py-0.5 text-[10px] font-medium">
+                                <AlertTriangle className="h-2.5 w-2.5" /> Duplicate
+                              </span>
+                            )}
+                          </div>
                         ) : field === "Asset Category" ? (
                           <CategoryBadge category={String(asset[field])} />
                         ) : WARRANTY_FIELDS.includes(field) ? (
