@@ -14,11 +14,12 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Search, Eye, ChevronLeft, ChevronRight, Trash2, Printer } from "lucide-react";
+import { Search, Eye, ChevronLeft, ChevronRight, Trash2, Printer, AlertTriangle } from "lucide-react";
 import CategoryBadge from "@/components/CategoryBadge";
 import WarrantyBadge from "@/components/WarrantyBadge";
 import QrCodeDialog from "@/components/QrCodeDialog";
 import BulkQrPrint from "@/components/BulkQrPrint";
+import { isMissingAssetId, isDuplicateAsset } from "@/lib/duplicateUtils";
 
 const ROWS_PER_PAGE = 10;
 
@@ -29,6 +30,7 @@ interface AssetTableProps {
   isAdmin?: boolean;
   globalSearch: string;
   onGlobalSearchChange: (val: string) => void;
+  duplicateSet?: Set<string>;
 }
 
 const displayValue = (val: string | number): string => {
@@ -38,7 +40,7 @@ const displayValue = (val: string | number): string => {
 
 const WARRANTY_FIELDS: (keyof Asset)[] = ["Warranty End Date", "EOL/EOS"];
 
-const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin, globalSearch, onGlobalSearchChange }: AssetTableProps) => {
+const AssetTable = ({ assets, onViewAsset, onDeleteAssets, isAdmin, globalSearch, onGlobalSearchChange, duplicateSet }: AssetTableProps) => {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
