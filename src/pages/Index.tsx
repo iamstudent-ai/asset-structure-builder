@@ -5,6 +5,7 @@ import { Asset } from "@/types/asset";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchAssets, addAsset, updateAsset, importAssets, deleteAsset } from "@/lib/assetService";
 import { getWarrantyStatus } from "@/lib/warrantyUtils";
+import { getDuplicateAssetIdSet, isMissingAssetId, isDuplicateAsset } from "@/lib/duplicateUtils";
 import AssetTable from "@/components/AssetTable";
 import AssetDetail from "@/components/AssetDetail";
 import DashboardSummary from "@/components/DashboardSummary";
