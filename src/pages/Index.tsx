@@ -94,15 +94,22 @@ const Index = () => {
 
   const categoryNames = useMemo(() => Object.keys(categoryCounts).sort(), [categoryCounts]);
 
-  // Warranty counts
-  const { expiredCount, expiringCount } = useMemo(() => {
+  // Warranty + duplicate/missing counts
+  const { expiredCount, expiringCount, duplicateSet, duplicateCount, missingCount } = useMemo(() => {
     let expired = 0, expiring = 0;
     assets.forEach((a) => {
       const w = getWarrantyStatus(a["Warranty End Date"]);
       if (w.status === "expired") expired++;
       else if (w.status === "expiring") expiring++;
     });
-    return { expiredCount: expired, expiringCount: expiring };
+    const dupSet = getDuplicateAssetIdSet(assets);
+    let dupCount = 0;
+    let missCount = 0;
+    assets.forEach((a) => {
+      if (isMissingAssetId(a["Asset ID"])) missCount++;
+      else if (isDuplicateAsset(a, dupSet)) dupCount++;
+    });
+    return { expiredCount: expired, expiringCount: expiring, duplicateSet: dupSet, duplicateCount: dupCount, missingCount: missCount };
   }, [assets]);
 
   // Filtering pipeline
