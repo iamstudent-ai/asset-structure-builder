@@ -5,7 +5,7 @@ import { Asset, EDITABLE_FIELDS, REQUIRED_FIELDS } from "@/types/asset";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Info, Cpu, Users, MapPin, ShieldCheck, Pencil, Save, X, FileDown } from "lucide-react";
+import { ArrowLeft, Info, Cpu, Users, MapPin, ShieldCheck, Pencil, Save, X, FileDown, AlertTriangle } from "lucide-react";
 import { generateSingleAssetReport } from "@/lib/assetPdfReport";
 import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -14,12 +14,14 @@ import WarrantyBadge from "@/components/WarrantyBadge";
 import QrCodeDialog from "@/components/QrCodeDialog";
 import AssetHistory from "@/components/AssetHistory";
 import { QrCode } from "lucide-react";
+import { isMissingAssetId, isDuplicateAsset } from "@/lib/duplicateUtils";
 
 interface AssetDetailProps {
   asset: Asset;
   onBack: () => void;
   onSave?: (updated: Asset) => void;
   readOnly?: boolean;
+  duplicateSet?: Set<string>;
 }
 
 const formatDate = (dateStr: string) => {
