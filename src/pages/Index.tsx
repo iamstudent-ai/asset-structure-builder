@@ -142,7 +142,7 @@ const Index = () => {
     }
 
     return result;
-  }, [assets, categoryFilter, companyFilter, specialFilter, globalSearch]);
+  }, [assets, categoryFilter, companyFilter, specialFilter, globalSearch, duplicateSet]);
 
   // Detail view
   if (selectedAsset) {
