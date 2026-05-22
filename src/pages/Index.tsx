@@ -156,6 +156,7 @@ const Index = () => {
               onBack={() => setSelectedAsset(null)}
               onSave={isAdmin ? handleSave : undefined}
               readOnly={!isAdmin}
+              duplicateSet={duplicateSet}
             />
           </div>
         </div>
