@@ -26,6 +26,7 @@ const fieldToColumn: Record<keyof Asset, string> = {
 // Convert DB row to frontend Asset
 function rowToAsset(row: any): Asset {
   return {
+    _id: row.id,
     "S.NO": row.sno,
     "Company": row.company || "",
     "Asset ID": row.asset_id || "",
@@ -94,12 +95,11 @@ export async function addAsset(asset: Asset): Promise<Asset> {
 
 export async function updateAsset(asset: Asset): Promise<Asset> {
   const row = assetToRow(asset);
-  const { data, error } = await supabase
-    .from("assets")
-    .update(row)
-    .eq("asset_id", asset["Asset ID"])
-    .select()
-    .single();
+  const query = supabase.from("assets").update(row);
+  // Prefer internal row UUID so duplicate Asset IDs don't all get updated together.
+  const { data, error } = asset._id
+    ? await query.eq("id", asset._id).select().single()
+    : await query.eq("asset_id", asset["Asset ID"]).select().single();
 
   if (error) throw error;
   return rowToAsset(data);
@@ -116,11 +116,10 @@ export async function importAssets(assets: Asset[]): Promise<Asset[]> {
   return (data || []).map(rowToAsset);
 }
 
-export async function deleteAsset(assetId: string): Promise<void> {
-  const { error } = await supabase
-    .from("assets")
-    .delete()
-    .eq("asset_id", assetId);
-
+/** Delete by internal row UUID (preferred) or fallback to asset_id. */
+export async function deleteAsset(idOrAssetId: string, isRowId = false): Promise<void> {
+  const { error } = isRowId
+    ? await supabase.from("assets").delete().eq("id", idOrAssetId)
+    : await supabase.from("assets").delete().eq("asset_id", idOrAssetId);
   if (error) throw error;
 }

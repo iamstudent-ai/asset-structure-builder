@@ -2,6 +2,8 @@
 // These fields are PERMANENT and must NEVER be renamed, removed, or changed.
 
 export interface Asset {
+  /** Internal DB row UUID — not displayed, used to target a specific row when duplicates exist. */
+  _id?: string;
   "S.NO": number;
   "Company": string;
   "Asset ID": string;
