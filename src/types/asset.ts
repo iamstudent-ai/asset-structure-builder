@@ -2,6 +2,8 @@
 // These fields are PERMANENT and must NEVER be renamed, removed, or changed.
 
 export interface Asset {
+  /** Internal DB row UUID — not displayed, used to target a specific row when duplicates exist. */
+  _id?: string;
   "S.NO": number;
   "Company": string;
   "Asset ID": string;
@@ -45,7 +47,7 @@ export const ASSET_FIELDS: (keyof Asset)[] = [
 ];
 
 // Field types for validation and rendering
-export const FIELD_TYPES: Record<keyof Asset, "number" | "text" | "date"> = {
+export const FIELD_TYPES: Record<Exclude<keyof Asset, "_id">, "number" | "text" | "date"> = {
   "S.NO": "number",
   "Company": "text",
   "Asset ID": "text",

@@ -47,7 +47,9 @@ const Index = () => {
   const handleSave = async (updated: Asset) => {
     try {
       const saved = await updateAsset(updated);
-      setAssets((prev) => prev.map((a) => (a["Asset ID"] === saved["Asset ID"] ? saved : a)));
+      setAssets((prev) =>
+        prev.map((a) => (saved._id && a._id === saved._id ? saved : a))
+      );
       setSelectedAsset(saved);
       toast({ title: "Saved", description: "Asset updated successfully." });
     } catch (err: any) {
@@ -77,9 +79,15 @@ const Index = () => {
 
   const handleDeleteAssets = async (assetIds: string[]) => {
     try {
-      for (const id of assetIds) await deleteAsset(id);
-      setAssets((prev) => prev.filter((a) => !assetIds.includes(a["Asset ID"])));
-      toast({ title: "Deleted", description: `${assetIds.length} asset(s) deleted successfully.` });
+      // Map provided Asset IDs to internal row UUIDs so we only delete the targeted rows
+      const targets = assets.filter((a) => assetIds.includes(a["Asset ID"]));
+      for (const a of targets) {
+        if (a._id) await deleteAsset(a._id, true);
+        else await deleteAsset(a["Asset ID"]);
+      }
+      const deletedIds = new Set(targets.map((a) => a._id));
+      setAssets((prev) => prev.filter((a) => !deletedIds.has(a._id)));
+      toast({ title: "Deleted", description: `${targets.length} asset(s) deleted successfully.` });
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to delete", variant: "destructive" });
     }
