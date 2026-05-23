@@ -48,10 +48,7 @@ const AddAssetForm = ({ existingAssetIds, nextSno, onAdd, allBrands = [] }: AddA
     for (const field of REQUIRED_FIELDS) {
       if (!String(draft[field]).trim()) newErrors[field] = "Required";
     }
-    const id = String(draft["Asset ID"]).trim().toLowerCase();
-    if (id && existingAssetIds.some((eid) => eid.toLowerCase() === id)) {
-      newErrors["Asset ID"] = "Asset ID already exists";
-    }
+    // Note: duplicate Asset IDs are now allowed — they will be flagged in the list with a "Duplicate" badge.
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
