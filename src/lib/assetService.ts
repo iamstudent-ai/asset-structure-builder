@@ -2,7 +2,8 @@ import { Asset } from "@/types/asset";
 import { supabase } from "@/integrations/supabase/client";
 
 // Maps frontend Asset fields to database column names
-const fieldToColumn: Record<keyof Asset, string> = {
+type AssetDisplayField = Exclude<keyof Asset, "_id">;
+const fieldToColumn: Record<AssetDisplayField, string> = {
   "S.NO": "sno",
   "Company": "company",
   "Asset ID": "asset_id",

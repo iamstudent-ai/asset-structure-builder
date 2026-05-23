@@ -47,7 +47,7 @@ export const ASSET_FIELDS: (keyof Asset)[] = [
 ];
 
 // Field types for validation and rendering
-export const FIELD_TYPES: Record<keyof Asset, "number" | "text" | "date"> = {
+export const FIELD_TYPES: Record<Exclude<keyof Asset, "_id">, "number" | "text" | "date"> = {
   "S.NO": "number",
   "Company": "text",
   "Asset ID": "text",
