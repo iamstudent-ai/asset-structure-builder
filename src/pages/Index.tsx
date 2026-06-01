@@ -154,6 +154,7 @@ const Index = () => {
 
   // Detail view
   if (selectedAsset) {
+    const needsFix = isMissingAssetId(selectedAsset["Asset ID"]) || isDuplicateAsset(selectedAsset, duplicateSet);
     return (
       <>
         <Navbar />
@@ -162,15 +163,17 @@ const Index = () => {
             <AssetDetail
               asset={selectedAsset}
               onBack={() => setSelectedAsset(null)}
-              onSave={isAdmin ? handleSave : undefined}
-              readOnly={!isAdmin}
+              onSave={isAdmin || needsFix ? handleSave : undefined}
+              readOnly={!isAdmin && !needsFix}
               duplicateSet={duplicateSet}
+              allowFullEdit={needsFix}
             />
           </div>
         </div>
       </>
     );
   }
+
 
   const nextSno = assets.length > 0 ? Math.max(...assets.map((a) => a["S.NO"])) + 1 : 1;
 
