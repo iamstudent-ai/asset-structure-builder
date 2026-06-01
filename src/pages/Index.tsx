@@ -47,15 +47,18 @@ const Index = () => {
   const handleSave = async (updated: Asset) => {
     try {
       const saved = await updateAsset(updated);
-      setAssets((prev) =>
-        prev.map((a) => (saved._id && a._id === saved._id ? saved : a))
-      );
-      setSelectedAsset(saved);
+      // Reload full asset list so Total Assets, company counts, and duplicate/missing
+      // badges all stay in sync after fixing a row.
+      const fresh = await fetchAssets();
+      setAssets(fresh);
+      const refreshed = fresh.find((a) => a._id === saved._id) || saved;
+      setSelectedAsset(refreshed);
       toast({ title: "Saved", description: "Asset updated successfully." });
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to save", variant: "destructive" });
     }
   };
+
 
   const handleImport = async (newAssets: Asset[]) => {
     try {
