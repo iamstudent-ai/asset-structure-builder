@@ -22,13 +22,13 @@ interface AssetDetailProps {
   onSave?: (updated: Asset) => void;
   readOnly?: boolean;
   duplicateSet?: Set<string>;
+  /** When true, every field becomes editable (used for duplicate / missing-ID rows). */
+  allowFullEdit?: boolean;
 }
 
 const formatDate = (dateStr: string) => {
   try { return format(parseISO(dateStr), "dd-MM-yyyy"); } catch { return dateStr || "N/A"; }
 };
-
-const isEditable = (field: keyof Asset) => EDITABLE_FIELDS.includes(field);
 
 const safeDisplay = (val: string | number): string => {
   const s = String(val ?? "").trim();
@@ -70,11 +70,14 @@ const Section = ({ title, icon, children }: { title: string; icon: React.ReactNo
   </Card>
 );
 
-const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet }: AssetDetailProps) => {
-  const [editing, setEditing] = useState(false);
+const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet, allowFullEdit = false }: AssetDetailProps) => {
+  const initialEditing = allowFullEdit && !readOnly;
+  const [editing, setEditing] = useState(initialEditing);
   const [draft, setDraft] = useState<Asset>({ ...asset });
   const [errors, setErrors] = useState<Partial<Record<keyof Asset, string>>>({});
   const { toast } = useToast();
+
+  const isEditable = (field: keyof Asset) => allowFullEdit || EDITABLE_FIELDS.includes(field);
 
   const updateField = (field: keyof Asset, value: string) => {
     setDraft((prev) => ({ ...prev, [field]: value }));
@@ -91,8 +94,9 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet }: 
   };
 
   const handleSave = () => {
+    const fieldsToTrim = allowFullEdit ? (Object.keys(draft) as (keyof Asset)[]) : EDITABLE_FIELDS;
     const trimmed = { ...draft };
-    for (const field of EDITABLE_FIELDS) {
+    for (const field of fieldsToTrim) {
       if (typeof trimmed[field] === "string") (trimmed as any)[field] = (trimmed[field] as string).trim();
     }
     setDraft(trimmed);
@@ -102,8 +106,13 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet }: 
     }
     onSave?.(trimmed);
     setEditing(false);
-    toast({ title: "Saved", description: "Asset updated successfully." });
+    toast({ title: "Saved", description: "Asset updated successfully. Returning to asset list..." });
+    // For duplicate/missing rows, return to main asset page after save
+    if (allowFullEdit) {
+      setTimeout(() => onBack(), 600);
+    }
   };
+
 
   const handleCancel = () => { setDraft({ ...asset }); setErrors({}); setEditing(false); };
 
