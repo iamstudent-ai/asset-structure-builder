@@ -22,13 +22,13 @@ interface AssetDetailProps {
   onSave?: (updated: Asset) => void;
   readOnly?: boolean;
   duplicateSet?: Set<string>;
+  /** When true, every field becomes editable (used for duplicate / missing-ID rows). */
+  allowFullEdit?: boolean;
 }
 
 const formatDate = (dateStr: string) => {
   try { return format(parseISO(dateStr), "dd-MM-yyyy"); } catch { return dateStr || "N/A"; }
 };
-
-const isEditable = (field: keyof Asset) => EDITABLE_FIELDS.includes(field);
 
 const safeDisplay = (val: string | number): string => {
   const s = String(val ?? "").trim();
