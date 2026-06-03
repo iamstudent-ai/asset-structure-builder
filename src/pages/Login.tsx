@@ -84,7 +84,7 @@ const Login = () => {
                   IT Asset Management
                 </h1>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  Enterprise Asset Tracking System
+                  Asset Tracking System
                 </p>
               </div>
             </div>
@@ -195,28 +195,10 @@ const Login = () => {
                 )}
               </Button>
 
-              {/* Toggle Sign In / Sign Up */}
-              <div className="text-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setIsSignUp(!isSignUp); setError(""); }}
-                  className="text-sm text-emerald-700 hover:text-emerald-800 font-medium transition-colors inline-flex items-center gap-1"
-                >
-                  {isSignUp ? (
-                    <>Already have an account? Sign in <ArrowRight className="h-3.5 w-3.5" /></>
-                  ) : (
-                    <>Don&apos;t have an account? Create one <ArrowRight className="h-3.5 w-3.5" /></>
-                  )}
-                </button>
-              </div>
             </form>
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-emerald-700/60 mt-6">
-          Secure Enterprise Asset Management Platform
-        </p>
       </div>
     </div>
   );
