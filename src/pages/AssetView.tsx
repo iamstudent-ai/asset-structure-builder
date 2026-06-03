@@ -42,7 +42,7 @@ const AssetView = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50/60 via-background to-emerald-50/30 p-4 md:p-8">
         <div className="max-w-[1400px] mx-auto">
           {loading ? (
             <div className="text-center py-12 text-muted-foreground animate-pulse">Loading asset...</div>
