@@ -43,30 +43,37 @@ const Field = ({
 }) => {
   const canEdit = editing && editable;
   return (
-    <div className={`flex flex-col gap-1 p-3 rounded-lg transition-colors ${
-      canEdit ? "bg-primary/[0.06] border border-primary/20" : "bg-muted/40"
+    <div className={`group flex flex-col gap-1 p-3 rounded-xl transition-all ${
+      canEdit
+        ? "bg-emerald-50/70 border border-emerald-200 ring-1 ring-emerald-200/50"
+        : "bg-white border border-emerald-100/70 hover:border-emerald-200 hover:shadow-sm"
     }`}>
-      <span className="text-xs text-muted-foreground font-medium">
-        {label} {editable && <span className="text-primary text-[10px]">(editable)</span>}
+      <span className="text-[11px] uppercase tracking-wide text-emerald-700/80 font-semibold">
+        {label} {editable && <span className="text-emerald-600 normal-case tracking-normal text-[10px] font-medium">(editable)</span>}
       </span>
       {canEdit ? (
         <>
-          <Input value={String(value)} onChange={(e) => onChange?.(e.target.value)} className="h-8 text-sm px-2 shadow-sm" />
+          <Input value={String(value)} onChange={(e) => onChange?.(e.target.value)} className="h-8 text-sm px-2 rounded-lg border-emerald-200 focus-visible:ring-emerald-500/30" />
           {error && <span className="text-xs text-destructive">{error}</span>}
         </>
       ) : (
-        <span className="text-sm font-medium text-foreground break-words">{safeDisplay(value)}</span>
+        <span className="text-sm font-medium text-gray-800 break-words">{safeDisplay(value)}</span>
       )}
     </div>
   );
 };
 
 const Section = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
-  <Card className="shadow-sm">
-    <CardHeader className="pb-2 pt-4 px-4">
-      <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground font-semibold">{icon} {title}</CardTitle>
+  <Card className="shadow-sm border border-emerald-100/80 rounded-2xl overflow-hidden bg-white">
+    <CardHeader className="pb-3 pt-4 px-5 bg-gradient-to-r from-emerald-50 to-transparent border-b border-emerald-100/70">
+      <CardTitle className="text-sm flex items-center gap-2 text-emerald-800 font-semibold">
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/10 text-emerald-700">
+          {icon}
+        </span>
+        {title}
+      </CardTitle>
     </CardHeader>
-    <CardContent className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">{children}</CardContent>
+    <CardContent className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">{children}</CardContent>
   </Card>
 );
 
@@ -128,63 +135,67 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet, al
   );
 
   const warrantyField = (field: keyof Asset) => (
-    <div className="flex flex-col gap-1 p-3 rounded-lg bg-muted/40">
-      <span className="text-xs text-muted-foreground font-medium">{field}</span>
+    <div className="flex flex-col gap-1 p-3 rounded-xl bg-white border border-emerald-100/70 hover:border-emerald-200 hover:shadow-sm transition-all">
+      <span className="text-[11px] uppercase tracking-wide text-emerald-700/80 font-semibold">{field}</span>
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-foreground">{formatDate(String(draft[field]))}</span>
+        <span className="text-sm font-medium text-gray-800">{formatDate(String(draft[field]))}</span>
         <WarrantyBadge dateStr={String(draft[field])} />
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={onBack} className="h-8 shadow-sm">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => generateSingleAssetReport(asset)} className="h-8 shadow-sm">
-            <FileDown className="h-4 w-4 mr-1" /> Download PDF
-          </Button>
-          <QrCodeDialog
-            asset={asset}
-            trigger={
-              <Button variant="outline" size="sm" className="h-8 shadow-sm">
-                <QrCode className="h-4 w-4 mr-1" /> QR Code
-              </Button>
-            }
-          />
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-foreground">
-              {isMissingAssetId(asset["Asset ID"]) ? "— (Missing Asset ID)" : asset["Asset ID"]}
-            </span>
-            <CategoryBadge category={asset["Asset Category"]} />
-            {isMissingAssetId(asset["Asset ID"]) && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 text-xs font-medium">
-                <AlertTriangle className="h-3 w-3" /> Missing Asset ID
+    <div className="space-y-5">
+      {/* Header card */}
+      <Card className="shadow-sm border border-emerald-100/80 rounded-2xl overflow-hidden bg-white">
+        <div className="h-1.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400" />
+        <div className="p-4 md:p-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button variant="outline" size="sm" onClick={onBack} className="h-9 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => generateSingleAssetReport(asset)} className="h-9 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800">
+              <FileDown className="h-4 w-4 mr-1" /> Download PDF
+            </Button>
+            <QrCodeDialog
+              asset={asset}
+              trigger={
+                <Button variant="outline" size="sm" className="h-9 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800">
+                  <QrCode className="h-4 w-4 mr-1" /> QR Code
+                </Button>
+              }
+            />
+            <div className="flex items-center gap-2 flex-wrap pl-1">
+              <span className="text-base font-bold text-gray-900">
+                {isMissingAssetId(asset["Asset ID"]) ? "— (Missing Asset ID)" : asset["Asset ID"]}
               </span>
-            )}
-            {!isMissingAssetId(asset["Asset ID"]) && duplicateSet && isDuplicateAsset(asset, duplicateSet) && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 text-xs font-medium">
-                <AlertTriangle className="h-3 w-3" /> Duplicate Asset ID
-              </span>
-            )}
+              <CategoryBadge category={asset["Asset Category"]} />
+              {isMissingAssetId(asset["Asset ID"]) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 text-xs font-medium">
+                  <AlertTriangle className="h-3 w-3" /> Missing Asset ID
+                </span>
+              )}
+              {!isMissingAssetId(asset["Asset ID"]) && duplicateSet && isDuplicateAsset(asset, duplicateSet) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 text-xs font-medium">
+                  <AlertTriangle className="h-3 w-3" /> Duplicate Asset ID
+                </span>
+              )}
+            </div>
           </div>
+          {!readOnly && (
+            <div className="flex gap-2">
+              {editing ? (
+                <>
+                  <Button size="sm" variant="outline" onClick={handleCancel} className="h-9 rounded-lg"><X className="h-4 w-4 mr-1" /> Cancel</Button>
+                  <Button size="sm" onClick={handleSave} className="h-9 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"><Save className="h-4 w-4 mr-1" /> Save</Button>
+                </>
+              ) : (
+                <Button size="sm" onClick={() => setEditing(true)} className="h-9 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"><Pencil className="h-4 w-4 mr-1" /> Edit</Button>
+              )}
+            </div>
+          )}
         </div>
-        {!readOnly && (
-          <div className="flex gap-2">
-            {editing ? (
-              <>
-                <Button size="sm" variant="outline" onClick={handleCancel} className="h-8"><X className="h-4 w-4 mr-1" /> Cancel</Button>
-                <Button size="sm" onClick={handleSave} className="h-8 shadow-sm"><Save className="h-4 w-4 mr-1" /> Save</Button>
-              </>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="h-8 shadow-sm"><Pencil className="h-4 w-4 mr-1" /> Edit</Button>
-            )}
-          </div>
-        )}
-      </div>
+      </Card>
 
       <Section title="Basic Info" icon={<Info className="h-4 w-4" />}>
         {f("S.NO")}
