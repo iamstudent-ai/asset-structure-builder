@@ -42,13 +42,13 @@
     --category-default: 220 10% 46%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 20% 14%;
-    --sidebar-primary: 221 68% 50%;
+    --sidebar-foreground: 158 30% 12%;
+    --sidebar-primary: 161 94% 24%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 16% 95%;
-    --sidebar-accent-foreground: 222 20% 14%;
-    --sidebar-border: 220 16% 90%;
-    --sidebar-ring: 221 68% 50%;
+    --sidebar-accent: 140 25% 92%;
+    --sidebar-accent-foreground: 158 30% 12%;
+    --sidebar-border: 140 20% 85%;
+    --sidebar-ring: 161 94% 30%;
   }
 
   .dark {
