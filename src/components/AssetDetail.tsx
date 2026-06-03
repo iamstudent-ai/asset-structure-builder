@@ -145,53 +145,57 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet, al
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={onBack} className="h-8 shadow-sm">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => generateSingleAssetReport(asset)} className="h-8 shadow-sm">
-            <FileDown className="h-4 w-4 mr-1" /> Download PDF
-          </Button>
-          <QrCodeDialog
-            asset={asset}
-            trigger={
-              <Button variant="outline" size="sm" className="h-8 shadow-sm">
-                <QrCode className="h-4 w-4 mr-1" /> QR Code
-              </Button>
-            }
-          />
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-foreground">
-              {isMissingAssetId(asset["Asset ID"]) ? "— (Missing Asset ID)" : asset["Asset ID"]}
-            </span>
-            <CategoryBadge category={asset["Asset Category"]} />
-            {isMissingAssetId(asset["Asset ID"]) && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 text-xs font-medium">
-                <AlertTriangle className="h-3 w-3" /> Missing Asset ID
+    <div className="space-y-5">
+      {/* Header card */}
+      <Card className="shadow-sm border border-emerald-100/80 rounded-2xl overflow-hidden bg-white">
+        <div className="h-1.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400" />
+        <div className="p-4 md:p-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button variant="outline" size="sm" onClick={onBack} className="h-9 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => generateSingleAssetReport(asset)} className="h-9 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800">
+              <FileDown className="h-4 w-4 mr-1" /> Download PDF
+            </Button>
+            <QrCodeDialog
+              asset={asset}
+              trigger={
+                <Button variant="outline" size="sm" className="h-9 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800">
+                  <QrCode className="h-4 w-4 mr-1" /> QR Code
+                </Button>
+              }
+            />
+            <div className="flex items-center gap-2 flex-wrap pl-1">
+              <span className="text-base font-bold text-gray-900">
+                {isMissingAssetId(asset["Asset ID"]) ? "— (Missing Asset ID)" : asset["Asset ID"]}
               </span>
-            )}
-            {!isMissingAssetId(asset["Asset ID"]) && duplicateSet && isDuplicateAsset(asset, duplicateSet) && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 text-xs font-medium">
-                <AlertTriangle className="h-3 w-3" /> Duplicate Asset ID
-              </span>
-            )}
+              <CategoryBadge category={asset["Asset Category"]} />
+              {isMissingAssetId(asset["Asset ID"]) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 text-xs font-medium">
+                  <AlertTriangle className="h-3 w-3" /> Missing Asset ID
+                </span>
+              )}
+              {!isMissingAssetId(asset["Asset ID"]) && duplicateSet && isDuplicateAsset(asset, duplicateSet) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 text-xs font-medium">
+                  <AlertTriangle className="h-3 w-3" /> Duplicate Asset ID
+                </span>
+              )}
+            </div>
           </div>
+          {!readOnly && (
+            <div className="flex gap-2">
+              {editing ? (
+                <>
+                  <Button size="sm" variant="outline" onClick={handleCancel} className="h-9 rounded-lg"><X className="h-4 w-4 mr-1" /> Cancel</Button>
+                  <Button size="sm" onClick={handleSave} className="h-9 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"><Save className="h-4 w-4 mr-1" /> Save</Button>
+                </>
+              ) : (
+                <Button size="sm" onClick={() => setEditing(true)} className="h-9 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"><Pencil className="h-4 w-4 mr-1" /> Edit</Button>
+              )}
+            </div>
+          )}
         </div>
-        {!readOnly && (
-          <div className="flex gap-2">
-            {editing ? (
-              <>
-                <Button size="sm" variant="outline" onClick={handleCancel} className="h-8"><X className="h-4 w-4 mr-1" /> Cancel</Button>
-                <Button size="sm" onClick={handleSave} className="h-8 shadow-sm"><Save className="h-4 w-4 mr-1" /> Save</Button>
-              </>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="h-8 shadow-sm"><Pencil className="h-4 w-4 mr-1" /> Edit</Button>
-            )}
-          </div>
-        )}
-      </div>
+      </Card>
 
       <Section title="Basic Info" icon={<Info className="h-4 w-4" />}>
         {f("S.NO")}
