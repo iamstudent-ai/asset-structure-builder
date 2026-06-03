@@ -43,30 +43,37 @@ const Field = ({
 }) => {
   const canEdit = editing && editable;
   return (
-    <div className={`flex flex-col gap-1 p-3 rounded-lg transition-colors ${
-      canEdit ? "bg-primary/[0.06] border border-primary/20" : "bg-muted/40"
+    <div className={`group flex flex-col gap-1 p-3 rounded-xl transition-all ${
+      canEdit
+        ? "bg-emerald-50/70 border border-emerald-200 ring-1 ring-emerald-200/50"
+        : "bg-white border border-emerald-100/70 hover:border-emerald-200 hover:shadow-sm"
     }`}>
-      <span className="text-xs text-muted-foreground font-medium">
-        {label} {editable && <span className="text-primary text-[10px]">(editable)</span>}
+      <span className="text-[11px] uppercase tracking-wide text-emerald-700/80 font-semibold">
+        {label} {editable && <span className="text-emerald-600 normal-case tracking-normal text-[10px] font-medium">(editable)</span>}
       </span>
       {canEdit ? (
         <>
-          <Input value={String(value)} onChange={(e) => onChange?.(e.target.value)} className="h-8 text-sm px-2 shadow-sm" />
+          <Input value={String(value)} onChange={(e) => onChange?.(e.target.value)} className="h-8 text-sm px-2 rounded-lg border-emerald-200 focus-visible:ring-emerald-500/30" />
           {error && <span className="text-xs text-destructive">{error}</span>}
         </>
       ) : (
-        <span className="text-sm font-medium text-foreground break-words">{safeDisplay(value)}</span>
+        <span className="text-sm font-medium text-gray-800 break-words">{safeDisplay(value)}</span>
       )}
     </div>
   );
 };
 
 const Section = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
-  <Card className="shadow-sm">
-    <CardHeader className="pb-2 pt-4 px-4">
-      <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground font-semibold">{icon} {title}</CardTitle>
+  <Card className="shadow-sm border border-emerald-100/80 rounded-2xl overflow-hidden bg-white">
+    <CardHeader className="pb-3 pt-4 px-5 bg-gradient-to-r from-emerald-50 to-transparent border-b border-emerald-100/70">
+      <CardTitle className="text-sm flex items-center gap-2 text-emerald-800 font-semibold">
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600/10 text-emerald-700">
+          {icon}
+        </span>
+        {title}
+      </CardTitle>
     </CardHeader>
-    <CardContent className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">{children}</CardContent>
+    <CardContent className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">{children}</CardContent>
   </Card>
 );
 
