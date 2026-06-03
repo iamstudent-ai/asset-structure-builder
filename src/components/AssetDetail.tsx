@@ -135,10 +135,10 @@ const AssetDetail = ({ asset, onBack, onSave, readOnly = false, duplicateSet, al
   );
 
   const warrantyField = (field: keyof Asset) => (
-    <div className="flex flex-col gap-1 p-3 rounded-lg bg-muted/40">
-      <span className="text-xs text-muted-foreground font-medium">{field}</span>
+    <div className="flex flex-col gap-1 p-3 rounded-xl bg-white border border-emerald-100/70 hover:border-emerald-200 hover:shadow-sm transition-all">
+      <span className="text-[11px] uppercase tracking-wide text-emerald-700/80 font-semibold">{field}</span>
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-foreground">{formatDate(String(draft[field]))}</span>
+        <span className="text-sm font-medium text-gray-800">{formatDate(String(draft[field]))}</span>
         <WarrantyBadge dateStr={String(draft[field])} />
       </div>
     </div>
